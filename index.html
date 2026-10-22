@@ -483,13 +483,19 @@
         </div>
         <div class="flex justify-end"><button type="button" onclick="saveCustomScaleConfigSeparated()" class="px-4 py-2 rounded-xl bg-amber-500 text-black text-sm font-bold">Salvar configuração personalizada</button></div>
       </section>
-      <section class="rounded-2xl border border-gray-200 dark:border-gray-700 bg-[#F8F5ED] dark:bg-[#211F1B] p-4 space-y-3">
-        <h3 class="font-bold text-sm">Gerenciar escalas salvas</h3>
-        <div class="flex flex-col sm:flex-row gap-2 items-stretch">
-          <label class="text-xs font-semibold flex-1">Mês da escala que deseja limpar<input type="month" id="clearScaleMonth" class="mt-1 w-full px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm"></label>
-          <button type="button" onclick="clearSpecificScaleMonth()" class="self-end px-3 py-2 rounded-xl border border-red-400 text-red-700 dark:text-red-300 text-xs font-bold">Apagar escala deste mês</button>
+      <section class="rounded-2xl border border-amber-200 dark:border-amber-900/70 bg-gradient-to-br from-[#FFFCF4] to-[#F7F0DF] dark:from-[#24221D] dark:to-[#1D1B17] p-4 sm:p-5 space-y-4 shadow-sm">
+        <div class="flex items-start gap-3">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-300"><i class="fa-solid fa-calendar-check text-lg"></i></div>
+          <div class="min-w-0"><h3 class="font-extrabold text-sm text-gray-900 dark:text-gray-100">Gerenciar escalas salvas</h3><p class="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-400">Escolha se deseja limpar a configuração de um mês específico ou remover todas as configurações salvas.</p></div>
         </div>
-        <button type="button" onclick="clearAllScaleConfigs()" class="px-3 py-2 rounded-xl bg-red-600 text-white text-xs font-bold">Resetar todas as escalas configuradas</button>
+        <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/40 p-3 sm:p-4 space-y-3">
+          <label class="block text-xs font-bold text-gray-700 dark:text-gray-300">Mês da escala que deseja limpar<input type="month" id="clearScaleMonth" class="mt-1.5 w-full px-3 py-2.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"></label>
+          <button type="button" onclick="clearSpecificScaleMonth()" class="flex w-full items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-red-300 bg-red-50 hover:bg-red-100 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300 dark:hover:bg-red-950/60 text-sm font-bold transition-colors"><i class="fa-solid fa-eraser"></i> Limpar escala deste mês</button>
+        </div>
+        <div class="rounded-xl border border-red-200/80 dark:border-red-900/70 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+          <div class="flex items-start gap-2"><i class="fa-solid fa-triangle-exclamation mt-0.5 text-red-600 dark:text-red-400"></i><div><p class="text-sm font-bold text-gray-800 dark:text-gray-200">Limpar todas as escalas</p><p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Remove todas as configurações de escala salvas.</p></div></div>
+          <button type="button" onclick="clearAllScaleConfigs()" class="shrink-0 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-bold transition-colors"><i class="fa-solid fa-trash-can mr-1.5"></i>Limpar todas</button>
+        </div>
         <div id="savedScaleConfigs" class="hidden" aria-hidden="true"></div>
       </section>
       <div id="settingsPdfMount"></div>
@@ -1829,28 +1835,62 @@
             const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`Backup_Escala_AMT_${formatDateKey(new Date())}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
         }
         function importBackup(event) {
-            const file=event.target.files&&event.target.files[0];if(!file)return;
-            const reader=new FileReader();reader.onload=()=>{
+            const input=event.target;
+            const file=input.files&&input.files[0];
+            if(!file)return;
+            const reader=new FileReader();
+            reader.onload=()=>{
+                let restored={};
                 try{
-                    const data=JSON.parse(String(reader.result||''));if(!data||typeof data!=='object'||Array.isArray(data))throw new Error('JSON inválido');
-                    let restored={};
-                    if(data.data&&typeof data.data==='object'&&!Array.isArray(data.data)){Object.entries(data.data).forEach(([k,v])=>{if(k.startsWith('amt_'))restored[k]=typeof v==='string'?v:JSON.stringify(v);});}
-                    // Compatibilidade com backups das versões anteriores e com arquivos que guardam os dados na raiz.
-                    const ev=data.eventsData??data.amt_events_data;
+                    const data=JSON.parse(String(reader.result||''));
+                    if(!data||typeof data!=='object'||Array.isArray(data))throw new Error('JSON inválido');
+                    if(data.format && data.format!=='escala-amt-backup') throw new Error('Formato de backup não reconhecido');
+                    if(data.data!==undefined && (data.data===null||typeof data.data!=='object'||Array.isArray(data.data))) throw new Error('Dados do backup inválidos');
+                    if(data.data&&typeof data.data==='object'){
+                        Object.entries(data.data).forEach(([k,v])=>{if(typeof k==='string'&&k.startsWith('amt_'))restored[k]=typeof v==='string'?v:JSON.stringify(v);});
+                    }
+                    // Compatibilidade com backups antigos que armazenavam registros na raiz.
+                    let ev=data.eventsData??data.amt_events_data;
                     const base=data.baseDutyDate??data.baseDate??data.baseDuty??data.amt_base_date;
+                    if(typeof ev==='string'){try{ev=JSON.parse(ev);}catch(_){throw new Error('Registros inválidos');}}
                     if(ev!==undefined){if(!ev||typeof ev!=='object'||Array.isArray(ev))throw new Error('Registros inválidos');restored.amt_events_data=JSON.stringify(ev);}
                     if(typeof base==='string'&&base)restored.amt_base_date=base;
                     if(data.theme)restored.amt_theme=String(data.theme);
                     if(!Object.keys(restored).length)throw new Error('Nenhum dado de backup reconhecido');
-                    if(!confirm('A restauração substituirá os dados correspondentes deste aplicativo pelos dados do backup. Deseja continuar?'))return;
+                    // Validar campos JSON conhecidos antes de escrever qualquer dado.
+                    ['amt_events_data','amt_agent_profile_v35','amt_month_scales'].forEach(key=>{
+                        if(restored[key]!==undefined){const parsed=JSON.parse(restored[key]);if(parsed===null||typeof parsed!=='object')throw new Error('Campo inválido: '+key);}
+                    });
+                }catch(e){
+                    console.error('Backup inválido:',e);
+                    alert('Não foi possível ler este backup. O arquivo está inválido ou não contém dados compatíveis com o Escala AMT Eusébio. Nenhum dado foi alterado.');
+                    input.value='';return;
+                }
+                if(!confirm('A restauração substituirá os dados correspondentes deste aplicativo pelos dados do backup. Deseja continuar?')){input.value='';return;}
+                // Gravação transacional: se uma gravação falhar, restaura os valores anteriores.
+                const previous={};
+                try{
+                    Object.keys(restored).forEach(k=>{previous[k]=localStorage.getItem(k);});
                     Object.entries(restored).forEach(([k,v])=>localStorage.setItem(k,v));
-                    eventsData=JSON.parse(localStorage.getItem('amt_events_data')||'{}');baseDutyDate=localStorage.getItem('amt_base_date')||'';
-                    const legacyBaseInput=document.getElementById('settingsBaseDateInput');if(legacyBaseInput)legacyBaseInput.value=baseDutyDate;
-                    const profile=localStorage.getItem('amt_agent_profile_v35');if(profile){try{applyProfile(JSON.parse(profile));}catch(_){}}
-                    renderApp();refreshManagementPanel();renderSavedScaleConfigs();updateCountdown();alert('Backup restaurado com sucesso.');
-                }catch(e){console.error('Erro ao restaurar backup:',e);alert('Não foi possível restaurar este arquivo. Selecione um backup JSON exportado pelo Escala AMT Eusébio e tente novamente. Nenhum dado foi alterado.');}
-                finally{event.target.value='';}
-            };reader.onerror=()=>{alert('Não foi possível ler o arquivo selecionado.');event.target.value='';};reader.readAsText(file);
+                }catch(writeError){
+                    console.error('Falha ao gravar backup:',writeError);
+                    Object.entries(previous).forEach(([k,v])=>{try{if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v);}catch(rollbackError){console.error('Falha ao reverter armazenamento:',rollbackError);}});
+                    alert('Não foi possível salvar o backup neste dispositivo. Os dados anteriores foram preservados sempre que possível. Verifique o espaço disponível e tente novamente.');
+                    input.value='';return;
+                }
+                // A restauração já foi gravada. Erros de atualização da interface não devem
+                // ser apresentados como falha de importação nem sugerir que os dados se perderam.
+                try{eventsData=JSON.parse(localStorage.getItem('amt_events_data')||'{}');}catch(e){eventsData={};console.error('Não foi possível recarregar os registros:',e);}
+                baseDutyDate=localStorage.getItem('amt_base_date')||'';
+                const legacyBaseInput=document.getElementById('settingsBaseDateInput');if(legacyBaseInput)legacyBaseInput.value=baseDutyDate;
+                const profile=localStorage.getItem('amt_agent_profile_v35');if(profile){try{applyProfile(JSON.parse(profile));}catch(e){console.error('Perfil restaurado, mas não foi possível atualizar sua exibição:',e);}}
+                let uiRefreshWarning=false;
+                [['renderApp',()=>renderApp()],['refreshManagementPanel',()=>refreshManagementPanel()],['renderSavedScaleConfigs',()=>renderSavedScaleConfigs()],['updateCountdown',()=>updateCountdown()]].forEach(([name,fn])=>{try{fn();}catch(e){uiRefreshWarning=true;console.error('Falha ao atualizar '+name+' após restaurar:',e);}});
+                alert(uiRefreshWarning?'Backup restaurado e salvo com sucesso. Alguns elementos da tela podem precisar ser atualizados ao reabrir o aplicativo.':'Backup restaurado com sucesso. Os dados foram salvos neste dispositivo.');
+                input.value='';
+            };
+            reader.onerror=()=>{alert('Não foi possível ler o arquivo selecionado.');input.value='';};
+            reader.readAsText(file);
         }
         async function resetAppData() {
             const storedPinHash=localStorage.getItem('amt_pin_hash');
