@@ -11,9 +11,12 @@
     <meta name="apple-mobile-web-app-title" content="Escala AMT">
     
     <meta name="description" content="Escala AMT Eusébio — Escala de serviço">
-    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+    <!-- PWA: caminhos relativos funcionam no GitHub Pages dentro da pasta do projeto -->
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 
-    <!-- Tailwind CSS -->
+<!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
