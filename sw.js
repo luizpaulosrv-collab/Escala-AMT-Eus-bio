@@ -1,4 +1,4 @@
-const CACHE_NAME = 'escala-amt-eusebio-v44';
+const CACHE_NAME = 'escala-amt-eusebio-v45';
 const APP_SHELL = ['./index.html', './fundo-amt.jpeg', './manifest.webmanifest', './brasao-amt-oficial.jpeg', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png', './icons/icon-180.png'];
 
 self.addEventListener('install', event => {

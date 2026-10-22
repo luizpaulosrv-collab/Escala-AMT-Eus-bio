@@ -281,7 +281,7 @@
                 </div>
                 <div class="flex items-center gap-1.5">
                     <span class="w-3 h-3 rounded-full bg-orange-500 border border-orange-600"></span>
-                    <span>Troca de plantão</span>
+                    <span>Troca (laranja escuro: trabalho; claro: folga)</span>
                 </div>
                 <div class="flex items-center gap-1.5">
                     <span class="w-2.5 h-2.5 rounded-full bg-black border border-gray-500"></span>
@@ -944,6 +944,24 @@
         }
         function clearAllScaleConfigs(){let configs=[];try{configs=JSON.parse(localStorage.getItem('amt_month_scales')||'[]')}catch(_){};if(!configs.length){alert('Não há escalas configuradas para limpar.');return;}if(!confirm('Tem certeza de que deseja resetar TODAS as escalas configuradas? Essa ação não pode ser desfeita.'))return;localStorage.removeItem('amt_month_scales');document.getElementById('clearScaleMonth').value='';renderSavedScaleConfigs();renderApp();updateCountdown();alert('Todas as configurações de escala foram removidas.');}
 
+        // Identifica cada troca como um único par de datas, mesmo que ela apareça nos dois dias.
+        function getSwapPairKey(dateKey, swap) {
+            if (!swap || !swap.active) return '';
+            if (swap.groupId) return String(swap.groupId);
+            const other = String(swap.otherDate || '');
+            return other ? [dateKey, other].sort().join('|') : dateKey;
+        }
+        function countUniqueSwapsInMonth(year, monthIndex) {
+            const prefix = `${year}-${String(monthIndex + 1).padStart(2, '0')}-`;
+            const pairs = new Set();
+            Object.entries(eventsData).forEach(([key, ev]) => {
+                if (key.startsWith(prefix) && ev?.swap?.active) {
+                    pairs.add(getSwapPairKey(key, ev.swap));
+                }
+            });
+            return pairs.size;
+        }
+
         function getSwapRole(targetDate) {
             const key = formatDateKey(targetDate);
             const swap = eventsData[key]?.swap;
@@ -1125,8 +1143,11 @@
                     // Folga manual tem prioridade sobre as cores de plantão/troca.
                     bgClasses = "bg-gray-100 dark:bg-[#222228] text-gray-800 dark:text-gray-200 hover:border-amber-500 cursor-pointer";
                 } else if (isSwapDay) {
-                    // A troca tem prioridade visual: data laranja com nome do agente.
-                    bgClasses = "bg-orange-500 text-black font-extrabold shadow-md hover:bg-orange-600 cursor-pointer ring-1 ring-orange-300";
+                    // Laranja escuro no dia em que o servidor cadastrado vai trabalhar;
+                    // laranja suave no dia original em que ficará de folga.
+                    bgClasses = isRegisteredAgent(data.swap.agent)
+                        ? "bg-orange-700 text-white font-extrabold shadow-md hover:bg-orange-800 cursor-pointer ring-1 ring-orange-500"
+                        : "bg-orange-200 text-orange-950 font-bold shadow-sm hover:bg-orange-300 cursor-pointer ring-1 ring-orange-300";
                 } else if (hasExtraShiftDay) {
                     // Plantão extra de 24h: amarelo.
                     bgClasses = "bg-yellow-400 text-gray-950 font-extrabold shadow-md hover:bg-yellow-300 cursor-pointer ring-1 ring-yellow-500";
@@ -1231,7 +1252,7 @@
                     const hasExtraShiftYear = ev.extra && ev.extra.type === 'shift';
                     let bg = duty ? 'bg-blue-600 text-white font-bold' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400';
                     if (ev.dayOff === true) bg = 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400';
-                    if (ev.swap && ev.swap.active) bg = 'bg-orange-500 text-black font-bold';
+                    if (ev.swap && ev.swap.active) bg = isRegisteredAgent(ev.swap.agent) ? 'bg-orange-700 text-white font-bold' : 'bg-orange-200 text-orange-950 font-bold';
                     else if (ev.dayOff !== true && hasExtraShiftYear) bg = 'bg-yellow-400 text-gray-950 font-bold';
                     else if (ev.dayOff !== true && ev.extra && ev.extra.type === 'hours') bg = 'bg-green-500 text-white font-bold';
 
@@ -1280,7 +1301,7 @@
             let extra50Hours = 0;
             let extra100Hours = 0;
             let extraShifts = 0;
-            let swappedShifts = 0;
+            let swappedShifts = countUniqueSwapsInMonth(year, month);
 
             const dutyDaysList = [];
             const offDaysList = [];
@@ -1304,7 +1325,7 @@
                 }
 
                 const event = eventsData[dateKey] || {};
-                if (event.swap && event.swap.active) { swappedShifts++; swapDaysList.push(formattedDayNumber); }
+                if (event.swap && event.swap.active) { swapDaysList.push(formattedDayNumber); }
                 if (event.extra && event.extra.type === 'hours') extraDaysList.push(formattedDayNumber);
                 if (event.extra && event.extra.type === 'shift') extraShiftDaysList.push(formattedDayNumber);
                 if (event.extra && event.extra.type !== 'none') {
@@ -1790,8 +1811,8 @@
             doc.setFillColor(18,18,20);doc.rect(0,0,pw,25,'F');doc.setTextColor(255,193,7);doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('ESCALA AMT EUSÉBIO',margin,10);doc.setTextColor(255,255,255);doc.setFontSize(9);doc.text(agent,margin,18);doc.setFontSize(8);doc.text(monthKeys.length===1?monthKeys[0]:monthKeys[0]+' a '+monthKeys[monthKeys.length-1],pw-margin,18,{align:'right'});doc.setTextColor(25,25,25);
             const line=(txt,bold=false,size=8)=>{doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);const lines=doc.splitTextToSize(String(txt),pw-margin*2);if(y+lines.length*(size*.42)+1.3>285){doc.addPage();y=14;}doc.text(lines,margin,y);y+=lines.length*(size*.42)+1.3;};
             line(mode==='compare'?'RELATÓRIO — COMPARAÇÃO DE MESES':mode==='period'?'RELATÓRIO DE ESCALA — PERÍODO':'RELATÓRIO MENSAL DE ESCALA',true,10);
-            for(const mk of monthKeys){const [yy,mm]=mk.split('-').map(Number),days=new Date(yy,mm,0).getDate();let duty=0,off=0,extraDays=0,extraShifts=0,swaps=0,h50=0,h100=0,dutyDates=[],offDates=[];const rows=[];
-                for(let d=1;d<=days;d++){const dt=new Date(yy,mm-1,d),key=formatDateKey(dt),ev=eventsData[key]||{},isDuty=isDutyDay(dt);if(isDuty){duty++;dutyDates.push(String(d).padStart(2,'0'));}else{off++;offDates.push(String(d).padStart(2,'0'));}if(ev.extra?.type==='hours'){extraDays++;const h=Number(ev.extra.hours)||0;if(ev.extra.rate==='100')h100+=h;else h50+=h;}if(ev.extra?.type==='shift'){extraShifts++;if(ev.extra.rate==='100')h100+=24;else h50+=24;}if(ev.swap?.active)swaps++;if(ev.note||ev.swap?.active||ev.extra?.type==='hours'||ev.extra?.type==='shift')rows.push(`${String(d).padStart(2,'0')}: ${ev.extra?.type==='hours'?'Extra '+(Number(ev.extra.hours)||0)+'h '+(ev.extra.rate||'50')+'% ':''}${ev.extra?.type==='shift'?'Plantão extra 24h ':''}${ev.swap?.active?'Troca com '+(ev.swap.agent||'agente não informado')+' ':''}${ev.note?'Obs.: '+ev.note:''}`.trim());}
+            for(const mk of monthKeys){const [yy,mm]=mk.split('-').map(Number),days=new Date(yy,mm,0).getDate();let duty=0,off=0,extraDays=0,extraShifts=0,swaps=countUniqueSwapsInMonth(yy,mm-1),h50=0,h100=0,dutyDates=[],offDates=[];const rows=[];
+                for(let d=1;d<=days;d++){const dt=new Date(yy,mm-1,d),key=formatDateKey(dt),ev=eventsData[key]||{},isDuty=isDutyDay(dt);if(isDuty){duty++;dutyDates.push(String(d).padStart(2,'0'));}else{off++;offDates.push(String(d).padStart(2,'0'));}if(ev.extra?.type==='hours'){extraDays++;const h=Number(ev.extra.hours)||0;if(ev.extra.rate==='100')h100+=h;else h50+=h;}if(ev.extra?.type==='shift'){extraShifts++;if(ev.extra.rate==='100')h100+=24;else h50+=24;}if(ev.note||ev.swap?.active||ev.extra?.type==='hours'||ev.extra?.type==='shift')rows.push(`${String(d).padStart(2,'0')}: ${ev.extra?.type==='hours'?'Extra '+(Number(ev.extra.hours)||0)+'h '+(ev.extra.rate||'50')+'% ':''}${ev.extra?.type==='shift'?'Plantão extra 24h ':''}${ev.swap?.active?'Troca com '+(ev.swap.agent||'agente não informado')+' ':''}${ev.note?'Obs.: '+ev.note:''}`.trim());}
                 line(new Date(yy,mm-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'}).toUpperCase(),true,9);
                 if(selected('pdfOptDuty'))line(`Plantões: ${duty} dia(s) — ${dutyDates.length?dutyDates.join(', '):'nenhum'}`);if(selected('pdfOptOff'))line(`Folgas: ${off} dia(s) — ${offDates.length?offDates.join(', '):'nenhuma'}`);if(selected('pdfOptExtras'))line(`Dias com hora extra: ${extraDays} | Plantões extras 24h: ${extraShifts} | Horas 50%: ${h50}h | Horas 100%: ${h100}h`);if(selected('pdfOptSwaps'))line(`Trocas de plantão: ${swaps}`);if(selected('pdfOptDetails')&&rows.length)rows.forEach(r=>line(r,false,7));y+=1;
             }
@@ -1812,8 +1833,9 @@
             document.getElementById('dashNext').textContent = formatDateFormatted(next);
             const prefix = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-`;
             const monthEvents = Object.entries(eventsData).filter(([k,v]) => k.startsWith(prefix) && v && (v.note || (v.swap && v.swap.active) || (v.extra && v.extra.type && v.extra.type !== 'none') || (v.attachments && v.attachments.length)));
-            let hours = 0, extraShifts = 0, swaps = 0;
-            Object.entries(eventsData).filter(([k])=>k.startsWith(prefix)).forEach(([k,v])=>{ if(v.extra?.type==='hours') hours += Number(v.extra.hours)||0; if(v.extra?.type==='shift') extraShifts++; if(v.swap?.active) swaps++; });
+            let hours = 0, extraShifts = 0;
+            Object.entries(eventsData).filter(([k])=>k.startsWith(prefix)).forEach(([k,v])=>{ if(v.extra?.type==='hours') hours += Number(v.extra.hours)||0; if(v.extra?.type==='shift') extraShifts++; });
+            const swaps = countUniqueSwapsInMonth(today.getFullYear(), today.getMonth());
             document.getElementById('dashRecords').textContent = monthEvents.length;
             document.getElementById('dashHours').textContent = `${hours} h`;
             document.getElementById('statsSummary').innerHTML = `<div class="grid grid-cols-2 sm:grid-cols-4 gap-2"><div><b>${hours} h</b><br><span class="text-xs">Horas extras registradas</span></div><div><b>${extraShifts}</b><br><span class="text-xs">Plantões extras</span></div><div><b>${swaps}</b><br><span class="text-xs">Trocas registradas</span></div><div><b>${Object.keys(eventsData).length}</b><br><span class="text-xs">Dias com registros</span></div></div>`;
