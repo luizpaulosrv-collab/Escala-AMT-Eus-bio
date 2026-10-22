@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#1e1e24">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Escala AMT">
     
     <meta name="description" content="Escala AMT Eusébio — Escala de serviço">
@@ -43,6 +43,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
     <style>
         html { width:100%; min-height:100%; overflow-x:hidden; -webkit-text-size-adjust:100%; }
+        /* Corrige a área segura do iOS quando o app é aberto pela Tela de Início.
+           O Safari normal mantém seu comportamento; no modo standalone, o cabeçalho
+           respeita a área do relógio/ilha dinâmica e não cobre os indicadores do sistema. */
+        @supports (padding-top: env(safe-area-inset-top)) {
+            body { padding-top: env(safe-area-inset-top); }
+            header.sticky { top: 0; }
+        }
         body {
             width:100%; max-width:100%; min-height:100vh; margin:0; overflow-x:hidden;
             font-family: 'Inter', sans-serif;
