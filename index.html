@@ -100,7 +100,21 @@
             50% { opacity: 0.85; transform: scale(0.99); }
         }
     </style>
-<style>html,body{overscroll-behavior:none;touch-action:pan-x pan-y;-webkit-text-size-adjust:100%}#appMain{width:100%;overflow-x:hidden}</style>
+<style>
+/* Correção de rolagem vertical no Android instalado (PWA) */
+html { height:auto !important; min-height:100%; overflow-x:hidden; overflow-y:auto !important; }
+body { height:auto !important; min-height:100vh; min-height:100dvh; overflow-x:hidden; overflow-y:auto !important; touch-action:pan-y; -webkit-overflow-scrolling:touch; }
+#appMain { width:100%; max-width:100%; overflow-x:hidden; overflow-y:visible; touch-action:pan-y; }
+body, #appMain { overscroll-behavior-y:auto; }
+</style>
+
+<style id="pwa-scroll-fix-v2">
+/* Correção de rolagem vertical: documento como área rolável, sem travar gestos no Android/iOS */
+html { height:auto !important; min-height:100% !important; overflow-x:hidden !important; overflow-y:auto !important; touch-action:auto !important; }
+body { height:auto !important; min-height:100vh !important; min-height:100dvh !important; overflow-x:hidden !important; overflow-y:auto !important; touch-action:auto !important; -webkit-overflow-scrolling:touch; overscroll-behavior-y:auto !important; }
+body * { touch-action:inherit; }
+#appMain, #settingsScreen { height:auto !important; min-height:0; overflow-y:visible !important; touch-action:auto !important; }
+</style>
 </head>
 <body class="bg-[#EEE8DC] dark:bg-[#171613] text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-300 pb-12">
 
