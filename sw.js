@@ -1,4 +1,4 @@
-const CACHE_NAME = 'escala-amt-eusebio-v46-icones';
+const CACHE_NAME = 'escala-amt-eusebio-v47-pwa-android';
 const APP_SHELL = [
   './',
   './index.html',
