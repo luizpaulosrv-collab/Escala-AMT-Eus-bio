@@ -99,6 +99,16 @@
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.85; transform: scale(0.99); }
         }
+
+        html[data-color-theme="ocean"] body::after { background: var(--amt-theme-light); }
+        html.dark[data-color-theme="ocean"] body::after { background: var(--amt-theme-dark); }
+        html[data-color-theme="forest"] body::after { background: var(--amt-theme-light); }
+        html.dark[data-color-theme="forest"] body::after { background: var(--amt-theme-dark); }
+        html[data-color-theme="violet"] body::after { background: var(--amt-theme-light); }
+        html.dark[data-color-theme="violet"] body::after { background: var(--amt-theme-dark); }
+        html[data-color-theme="graphite"] body::after { background: var(--amt-theme-light); }
+        html.dark[data-color-theme="graphite"] body::after { background: var(--amt-theme-dark); }
+        #modalNoteInput { min-height:160px; line-height:1.55; }
     </style>
 <style>
 /* Correção de rolagem vertical no Android instalado (PWA) */
@@ -157,7 +167,7 @@ body * { touch-action:inherit; }
         <h2 class="text-lg font-black">Configurar escala deste mês</h2>
         <p id="monthScaleModalTitle" class="mt-1 text-sm text-slate-600"></p>
         <div class="mt-4 grid gap-3">
-          <label class="text-sm font-bold">Escala de serviço<select id="monthScaleType" class="mt-1 w-full rounded-xl border border-slate-300 p-3"><option value="" selected>Selecione a escala</option><option value="24x72">24x72h</option><option value="12x36">12x36h</option><option value="24x48">24x48h</option><option value="24x96">24x96h</option><option value="12x60">12x60h</option><option value="administrativo">Administrativo</option></select></label>
+          <label class="text-sm font-bold">Escala de serviço<select id="monthScaleType" class="mt-1 w-full rounded-xl border border-slate-300 p-3"><option value="" selected>Selecione a escala</option><option value="" selected>Selecione a escala</option><option value="24x72">24x72h</option><option value="12x36">12x36h</option><option value="24x48">24x48h</option><option value="24x96">24x96h</option><option value="12x60">12x60h</option><option value="administrativo">Administrativo</option></select></label>
           <label class="text-sm font-bold">Data de um plantão conhecido neste mês<input id="monthScaleBaseDate" type="date" class="mt-1 w-full rounded-xl border border-slate-300 p-3"></label>
           <p class="text-xs text-slate-500">Esta configuração vale somente para o mês exibido. Outras configurações salvas não serão alteradas.</p>
         </div>
@@ -223,7 +233,7 @@ body * { touch-action:inherit; }
                 <button id="btnConfig" onclick="openConfigModal()" class="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition" title="Configurações">
                     <i class="fa-solid fa-gear text-lg"></i>
                 </button>
-                <button id="btnThemeToggle" onclick="toggleTheme()" class="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-amber-500 dark:text-amber-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition" title="Alternar Tema">
+                <button id="btnThemeToggle" onclick="toggleThemeMenu()" class="p-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 text-amber-500 dark:text-amber-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition" title="Alternar Tema">
                     <i class="fa-solid fa-moon text-lg dark:hidden"></i>
                     <i class="fa-solid fa-sun text-lg hidden dark:block"></i>
                 </button>
@@ -471,8 +481,8 @@ body * { touch-action:inherit; }
               </div>
               <div id="backupSettings" class="config-only-tools hidden border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
                 <h4 class="font-semibold text-sm text-gray-800 dark:text-gray-200"><i class="fa-solid fa-database text-amber-600 mr-1"></i> Backup e restauração</h4>
-                <p class="text-xs text-gray-500 dark:text-gray-400">Exporte a escala e os registros para um arquivo JSON. Guarde-o em local seguro; a restauração substitui os registros atuais.</p>
-                <div class="flex flex-wrap gap-2"><button onclick="exportBackup()" class="px-3 py-2 rounded-lg bg-amber-500 text-black font-bold text-sm"><i class="fa-solid fa-download mr-1"></i> Exportar backup</button><label class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer text-sm font-semibold"><i class="fa-solid fa-upload mr-1"></i> Restaurar backup<input id="backupFile" type="file" accept="application/json,.json" onchange="importBackup(event)" class="hidden"></label></div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Exporte um único arquivo ZIP com escalas, configurações, banco de horas, pagamentos, temas e todos os contracheques em PDF. Guarde-o em local seguro; a restauração recupera esses dados neste dispositivo.</p>
+                <div class="flex flex-wrap gap-2"><button onclick="exportBackup()" class="px-3 py-2 rounded-lg bg-amber-500 text-black font-bold text-sm"><i class="fa-solid fa-download mr-1"></i> Exportar backup</button><label class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer text-sm font-semibold"><i class="fa-solid fa-upload mr-1"></i> Restaurar backup<input id="backupFile" type="file" accept=".zip,application/zip,application/x-zip-compressed,application/json,.json" onchange="importBackup(event)" class="hidden"></label></div>
               </div>
 
         </section>
@@ -491,8 +501,8 @@ body * { touch-action:inherit; }
         <p class="text-xs text-gray-500 dark:text-gray-400">Configure a escala para um único mês. Os demais meses já configurados serão preservados.</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label class="text-xs font-bold">Mês<select id="monthlyScaleMonth" class="mt-1 w-full px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm"><option value="" selected>Selecione o mês</option></select></label>
-          <label class="text-xs font-bold">Escala de serviço<select id="monthlyScaleType" class="mt-1 w-full px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm"><option value="24x72">24x72h</option><option value="12x36">12x36h</option><option value="24x48">24x48h</option><option value="24x96">24x96h</option><option value="12x60">12x60h</option><option value="administrativo">Administrativo</option></select></label>
-          <label class="text-xs font-bold sm:col-span-2">Data de um plantão conhecido nesse mês<input type="date" id="monthlyScaleBaseDate" class="mt-1 w-full px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm"></label>
+          <label class="text-xs font-bold">Escala de serviço<select id="monthlyScaleType" class="mt-1 w-full px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm"><option value="" selected>Selecione a escala</option><option value="24x72">24x72h</option><option value="12x36">12x36h</option><option value="24x48">24x48h</option><option value="24x96">24x96h</option><option value="12x60">12x60h</option><option value="administrativo">Administrativo</option></select></label>
+          <label class="text-xs font-bold sm:col-span-2">Data de um plantão conhecido nesse mês<input type="hidden" id="monthlyScaleBaseDate"><button type="button" id="monthlyScaleBaseDateDisplay" onclick="openScaleDatePicker('monthly')" class="mt-1 w-full text-left px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm text-gray-500">Selecionar data</button></label>
         </div>
         <div class="flex justify-end"><button type="button" onclick="saveMonthlyScaleFromSettings()" class="px-4 py-2 rounded-xl bg-amber-500 text-black text-sm font-bold">Salvar configuração mensal</button></div>
       </section>
@@ -500,10 +510,10 @@ body * { touch-action:inherit; }
         <h3 class="font-bold text-sm"><i class="fa-solid fa-calendar-week text-amber-500 mr-2"></i>Configuração personalizada da escala</h3>
         <p class="text-xs text-gray-500 dark:text-gray-400">Aplique uma escala a um período de vários meses, informando o mês inicial e final.</p>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <label class="text-xs font-bold">Escala de serviço<select id="customScaleType" class="mt-1 w-full px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm"><option value="24x72">24x72h</option><option value="12x36">12x36h</option><option value="24x48">24x48h</option><option value="24x96">24x96h</option><option value="12x60">12x60h</option><option value="administrativo">Administrativo</option></select></label>
-          <label class="text-xs font-bold">Mês inicial<input type="month" id="customScaleStartMonth" class="mt-1 w-full px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm"></label>
-          <label class="text-xs font-bold">Aplicar até o mês<input type="month" id="customScaleEndMonth" class="mt-1 w-full px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm"></label>
-          <label class="text-xs font-bold sm:col-span-2">Data de um plantão conhecido dentro do período<input type="date" id="customScaleBaseDate" class="mt-1 w-full px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm"></label>
+          <label class="text-xs font-bold">Escala de serviço<select id="customScaleType" class="mt-1 w-full px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm"><option value="" selected>Selecione a escala</option><option value="24x72">24x72h</option><option value="12x36">12x36h</option><option value="24x48">24x48h</option><option value="24x96">24x96h</option><option value="12x60">12x60h</option><option value="administrativo">Administrativo</option></select></label>
+          <label class="text-xs font-bold">Mês inicial<select id="customScaleStartMonth" class="mt-1 w-full px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm"><option value="" selected>Selecione o mês</option></select></label>
+          <label class="text-xs font-bold">Aplicar até o mês<select id="customScaleEndMonth" class="mt-1 w-full px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm"><option value="" selected>Selecione o mês</option></select></label>
+          <label class="text-xs font-bold sm:col-span-2">Data de um plantão conhecido dentro do período<input type="hidden" id="customScaleBaseDate"><button type="button" id="customScaleBaseDateDisplay" onclick="openScaleDatePicker('custom')" class="mt-1 w-full text-left px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm text-gray-500">Selecionar data</button></label>
         </div>
         <div class="flex justify-end"><button type="button" onclick="saveCustomScaleConfigSeparated()" class="px-4 py-2 rounded-xl bg-amber-500 text-black text-sm font-bold">Salvar configuração personalizada</button></div>
       </section>
@@ -513,7 +523,7 @@ body * { touch-action:inherit; }
           <div class="min-w-0"><h3 class="font-extrabold text-sm text-gray-900 dark:text-gray-100">Gerenciar escalas salvas</h3><p class="mt-1 text-xs leading-relaxed text-gray-600 dark:text-gray-400">Escolha se deseja limpar a configuração de um mês específico ou remover todas as configurações salvas.</p></div>
         </div>
         <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/40 p-3 sm:p-4 space-y-3">
-          <label class="block text-xs font-bold text-gray-700 dark:text-gray-300">Mês da escala que deseja limpar<input type="month" id="clearScaleMonth" class="mt-1.5 w-full px-3 py-2.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"></label>
+          <label class="block text-xs font-bold text-gray-700 dark:text-gray-300">Mês da escala que deseja limpar<select id="clearScaleMonth" class="mt-1.5 w-full px-3 py-2.5 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"><option value="" selected>Selecionar mês</option></select></label>
           <button type="button" onclick="clearSpecificScaleMonth()" class="flex w-full items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-red-300 bg-red-50 hover:bg-red-100 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300 dark:hover:bg-red-950/60 text-sm font-bold transition-colors"><i class="fa-solid fa-eraser"></i> Limpar escala deste mês</button>
         </div>
         <div class="rounded-xl border border-red-200/80 dark:border-red-900/70 p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
@@ -580,7 +590,7 @@ body * { touch-action:inherit; }
                     <label class="block text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">
                         <i class="fa-solid fa-pen-to-square text-amber-500 mr-1"></i> Observações e Notas
                     </label>
-                    <textarea id="modalNoteInput" rows="2" placeholder="Digite aqui anotações sobre este dia..." class="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm focus:ring-2 focus:ring-amber-500 outline-none text-gray-900 dark:text-white placeholder-gray-400"></textarea>
+                    <textarea id="modalNoteInput" rows="6" placeholder="Digite aqui anotações sobre este dia..." style="min-height:160px;resize:vertical" class="w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm focus:ring-2 focus:ring-amber-500 outline-none text-gray-900 dark:text-white placeholder-gray-400"></textarea>
                 </div>
 
                 <!-- Troca de Plantão: duas pessoas e duas datas independentes da data selecionada -->
@@ -639,7 +649,7 @@ body * { touch-action:inherit; }
                         </div>
                         <div>
                             <span class="text-[10px] text-gray-500 block mb-0.5">Qtd Horas</span>
-                            <input type="number" id="modalExtraHours" min="0" max="24" value="0" class="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-xs font-medium outline-none">
+                            <select id="modalExtraHours" aria-label="Quantidade de horas extras" class="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-xs font-medium outline-none"><option value="" selected>Horas</option><option value="1">1h</option><option value="2">2h</option><option value="3">3h</option><option value="4">4h</option><option value="5">5h</option><option value="6">6h</option><option value="7">7h</option><option value="8">8h</option><option value="9">9h</option><option value="10">10h</option><option value="11">11h</option><option value="12">12h</option><option value="13">13h</option><option value="14">14h</option><option value="15">15h</option><option value="16">16h</option><option value="17">17h</option><option value="18">18h</option><option value="19">19h</option><option value="20">20h</option><option value="21">21h</option><option value="22">22h</option><option value="23">23h</option><option value="24">24h</option></select>
                         </div>
                     </div>
                 </div>
@@ -754,7 +764,7 @@ body * { touch-action:inherit; }
         let currentView = 'month';
 
         // Armazenamento de Dados de Dias Salvos
-        let eventsData = JSON.parse(localStorage.getItem('amt_events_data')) || {};
+        let eventsData = JSON.parse(localStorage.getItem('amt_events_data')) || {}; window.getEscalaEventsData = () => eventsData;
 
         // Dia temporário sendo editado no modal
         let selectedDateStr = '';
@@ -891,7 +901,7 @@ body * { touch-action:inherit; }
             const start=document.getElementById('monthlyScaleMonth').value;
             const baseDate=document.getElementById('monthlyScaleBaseDate').value;
             const scale=document.getElementById('monthlyScaleType').value;
-            if(!start||!baseDate){alert('Selecione o mês e informe a data de um plantão conhecido.');return;}
+            if(!start||!scale||!baseDate){alert('Selecione o mês, a escala e a data de um plantão conhecido.');return;}
             if(baseDate.slice(0,7)!==start){alert('A data de plantão precisa estar dentro do mês escolhido.');return;}
             let configs=[];try{configs=JSON.parse(localStorage.getItem('amt_month_scales')||'[]');}catch(_){configs=[];}
             const conflicts=configs.filter(c=>start>=c.startMonth&&start<=c.endMonth);
@@ -1874,70 +1884,85 @@ body * { touch-action:inherit; }
             target.innerHTML = results.slice(0,100).map(([date,e])=>`<button onclick="openDayModal(new Date('${date}T12:00:00'))" class="w-full text-left p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-amber-500"><b>${date.split('-').reverse().join('/')}</b><span class="block text-xs text-gray-500 dark:text-gray-400">${escapeHTML([e.swap?.active ? 'Troca: '+(e.swap.agent||'agente não informado') : '', e.extra?.type==='hours' ? 'Horas extras: '+(e.extra.hours||0)+'h' : '', e.note || '', (e.attachments||[]).map(a=>a.name).join(', ')].filter(Boolean).join(' • ') || 'Registro do dia')}</span></button>`).join('') + (results.length>100?'<p class="text-xs text-gray-500">Mostrando os primeiros 100 resultados.</p>':'');
         }
         function escapeHTML(value) { return String(value ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-        function exportBackup() {
-            const appData={};
-            for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key&&key.startsWith('amt_'))appData[key]=localStorage.getItem(key);}
-            const payload={app:'Escala AMT Eusébio',format:'escala-amt-backup',backupVersion:2,version:2,exportedAt:new Date().toISOString(),baseDutyDate:localStorage.getItem('amt_base_date')||baseDutyDate||'',eventsData:eventsData||{},data:appData,theme:localStorage.getItem('amt_theme')||'dark'};
-            const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`Backup_Escala_AMT_${formatDateKey(new Date())}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+        // Backup completo ZIP sem dependência externa: funciona também offline.
+        const zipTextEncoder = new TextEncoder();
+        const zipTextDecoder = new TextDecoder('utf-8');
+        const zipCrcTable = (()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0;}return t;})();
+        function zipCrc32(bytes){let c=0xFFFFFFFF;for(const b of bytes)c=zipCrcTable[(c^b)&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0;}
+        function zipConcat(parts){const size=parts.reduce((n,p)=>n+p.length,0),out=new Uint8Array(size);let at=0;for(const part of parts){out.set(part,at);at+=part.length;}return out;}
+        function zipU16(v){const a=new Uint8Array(2);new DataView(a.buffer).setUint16(0,v,true);return a;}
+        function zipU32(v){const a=new Uint8Array(4);new DataView(a.buffer).setUint32(0,v>>>0,true);return a;}
+        function makeStoredZip(files){
+            const locals=[],centrals=[];let offset=0;
+            for(const file of files){const name=zipTextEncoder.encode(file.name),data=file.data instanceof Uint8Array?file.data:new Uint8Array(file.data),crc=zipCrc32(data);
+                const local=zipConcat([zipU32(0x04034b50),zipU16(20),zipU16(0x0800),zipU16(0),zipU16(0),zipU16(0),zipU32(crc),zipU32(data.length),zipU32(data.length),zipU16(name.length),zipU16(0),name,data]);locals.push(local);
+                centrals.push(zipConcat([zipU32(0x02014b50),zipU16(20),zipU16(20),zipU16(0x0800),zipU16(0),zipU16(0),zipU16(0),zipU32(crc),zipU32(data.length),zipU32(data.length),zipU16(name.length),zipU16(0),zipU16(0),zipU16(0),zipU16(0),zipU32(0),zipU32(offset),name]));offset+=local.length;
+            }
+            const central=zipConcat(centrals),body=zipConcat(locals),end=zipConcat([zipU32(0x06054b50),zipU16(0),zipU16(0),zipU16(files.length),zipU16(files.length),zipU32(central.length),zipU32(body.length),zipU16(0)]);
+            return zipConcat([body,central,end]);
         }
-        function importBackup(event) {
-            const input=event.target;
-            const file=input.files&&input.files[0];
-            if(!file)return;
-            const reader=new FileReader();
-            reader.onload=()=>{
-                let restored={};
-                try{
-                    const data=JSON.parse(String(reader.result||''));
-                    if(!data||typeof data!=='object'||Array.isArray(data))throw new Error('JSON inválido');
-                    if(data.format && data.format!=='escala-amt-backup') throw new Error('Formato de backup não reconhecido');
-                    if(data.data!==undefined && (data.data===null||typeof data.data!=='object'||Array.isArray(data.data))) throw new Error('Dados do backup inválidos');
-                    if(data.data&&typeof data.data==='object'){
-                        Object.entries(data.data).forEach(([k,v])=>{if(typeof k==='string'&&k.startsWith('amt_'))restored[k]=typeof v==='string'?v:JSON.stringify(v);});
-                    }
-                    // Compatibilidade com backups antigos que armazenavam registros na raiz.
-                    let ev=data.eventsData??data.amt_events_data;
-                    const base=data.baseDutyDate??data.baseDate??data.baseDuty??data.amt_base_date;
-                    if(typeof ev==='string'){try{ev=JSON.parse(ev);}catch(_){throw new Error('Registros inválidos');}}
-                    if(ev!==undefined){if(!ev||typeof ev!=='object'||Array.isArray(ev))throw new Error('Registros inválidos');restored.amt_events_data=JSON.stringify(ev);}
-                    if(typeof base==='string'&&base)restored.amt_base_date=base;
-                    if(data.theme)restored.amt_theme=String(data.theme);
+        function readStoredZip(buffer){
+            const bytes=new Uint8Array(buffer),view=new DataView(buffer);let eocd=-1;
+            for(let i=bytes.length-22;i>=Math.max(0,bytes.length-65558);i--){if(view.getUint32(i,true)===0x06054b50){eocd=i;break;}}
+            if(eocd<0)throw new Error('O arquivo não contém uma estrutura ZIP válida.');
+            const count=view.getUint16(eocd+10,true),centralOffset=view.getUint32(eocd+16,true);let pos=centralOffset;const out={};
+            for(let i=0;i<count;i++){
+                if(view.getUint32(pos,true)!==0x02014b50)throw new Error('Índice ZIP inválido.');
+                const method=view.getUint16(pos+10,true),crc=view.getUint32(pos+16,true),size=view.getUint32(pos+24,true),nameLen=view.getUint16(pos+28,true),extraLen=view.getUint16(pos+30,true),commentLen=view.getUint16(pos+32,true),localOffset=view.getUint32(pos+42,true);
+                const name=zipTextDecoder.decode(bytes.slice(pos+46,pos+46+nameLen));if(method!==0)throw new Error('Este ZIP usa compressão não compatível. Gere o backup pelo próprio aplicativo.');
+                if(view.getUint32(localOffset,true)!==0x04034b50)throw new Error('Arquivo interno ZIP inválido.');
+                const localName=view.getUint16(localOffset+26,true),localExtra=view.getUint16(localOffset+28,true),dataStart=localOffset+30+localName+localExtra,data=bytes.slice(dataStart,dataStart+size);
+                if(data.length!==size||zipCrc32(data)!==crc)throw new Error('Um arquivo do backup está corrompido: '+name);
+                out[name]=data;pos+=46+nameLen+extraLen+commentLen;
+            }
+            return out;
+        }
+        async function getPaystubRecords(){return await dbAll();}
+        window.exportBackup=async function(){
+            try{
+                const appData={};for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key&&key.startsWith('amt_'))appData[key]=localStorage.getItem(key);}
+                const paystubs=await getPaystubRecords(),files=[];const manifest={app:'Escala AMT Eusébio',format:'escala-amt-backup-zip',backupVersion:3,exportedAt:new Date().toISOString(),data:appData,theme:localStorage.getItem('amt_theme')||'dark',paystubs:[]};
+                for(let i=0;i<paystubs.length;i++){const f=paystubs[i],path=`contracheques/${String(f.month).replace(/[^0-9-]/g,'')}.pdf`,blob=f.blob instanceof Blob?f.blob:new Blob([f.blob],{type:'application/pdf'});files.push({name:path,data:new Uint8Array(await blob.arrayBuffer())});manifest.paystubs.push({month:f.month,name:f.name||`contracheque-${f.month}.pdf`,path,updatedAt:f.updatedAt||null});}
+                files.unshift({name:'backup.json',data:zipTextEncoder.encode(JSON.stringify(manifest,null,2))});
+                const zip=makeStoredZip(files),blob=new Blob([zip],{type:'application/zip'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`Backup_Completo_Escala_AMT_${formatDateKey(new Date())}.zip`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
+                alert(`Backup ZIP gerado com sucesso.\n\nDados e configurações: incluídos\nBanco de horas e pagamentos: incluídos\nContracheques PDF: ${paystubs.length}`);
+            }catch(e){console.error('Falha ao exportar backup completo:',e);alert('Não foi possível gerar o backup completo. Verifique o espaço disponível e tente novamente.');}
+        };
+        window.importBackup=async function(event){
+            const input=event.target,file=input.files&&input.files[0];if(!file)return;
+            const isZip=file.name.toLowerCase().endsWith('.zip')||file.type.includes('zip');
+            try{
+                let data,restored={},pdfRecords=[];
+                if(isZip){
+                    const entries=readStoredZip(await file.arrayBuffer());if(!entries['backup.json'])throw new Error('O ZIP não contém backup.json.');
+                    data=JSON.parse(zipTextDecoder.decode(entries['backup.json']));if(data.format!=='escala-amt-backup-zip'||!Array.isArray(data.paystubs))throw new Error('Formato de backup ZIP não reconhecido.');
+                    if(!data.data||typeof data.data!=='object'||Array.isArray(data.data))throw new Error('Dados do backup inválidos.');
+                    Object.entries(data.data).forEach(([k,v])=>{if(k.startsWith('amt_'))restored[k]=typeof v==='string'?v:JSON.stringify(v);});
+                    for(const item of data.paystubs){if(!item||typeof item.month!=='string'||typeof item.path!=='string'||!entries[item.path])throw new Error('Contracheque ausente ou inválido no ZIP.');const bytes=entries[item.path];pdfRecords.push({month:item.month,name:item.name||`contracheque-${item.month}.pdf`,type:'application/pdf',blob:new Blob([bytes],{type:'application/pdf'}),updatedAt:item.updatedAt||new Date().toISOString()});}
+                }else{
+                    // Compatibilidade com backups JSON antigos: eles não contêm PDFs.
+                    data=JSON.parse(await file.text());if(!data||typeof data!=='object'||Array.isArray(data))throw new Error('JSON inválido');
+                    if(data.format&&data.format!=='escala-amt-backup')throw new Error('Formato de backup não reconhecido');
+                    if(data.data&&typeof data.data==='object'&&!Array.isArray(data.data))Object.entries(data.data).forEach(([k,v])=>{if(k.startsWith('amt_'))restored[k]=typeof v==='string'?v:JSON.stringify(v);});
+                    let ev=data.eventsData??data.amt_events_data,base=data.baseDutyDate??data.baseDate??data.baseDuty??data.amt_base_date;
+                    if(typeof ev==='string'){try{ev=JSON.parse(ev)}catch(_){throw new Error('Registros inválidos')}}if(ev!==undefined){if(!ev||typeof ev!=='object'||Array.isArray(ev))throw new Error('Registros inválidos');restored.amt_events_data=JSON.stringify(ev);}if(typeof base==='string'&&base)restored.amt_base_date=base;if(data.theme)restored.amt_theme=String(data.theme);
                     if(!Object.keys(restored).length)throw new Error('Nenhum dado de backup reconhecido');
-                    // Validar campos JSON conhecidos antes de escrever qualquer dado.
-                    ['amt_events_data','amt_agent_profile_v35','amt_month_scales'].forEach(key=>{
-                        if(restored[key]!==undefined){const parsed=JSON.parse(restored[key]);if(parsed===null||typeof parsed!=='object')throw new Error('Campo inválido: '+key);}
-                    });
-                }catch(e){
-                    console.error('Backup inválido:',e);
-                    alert('Não foi possível ler este backup. O arquivo está inválido ou não contém dados compatíveis com o Escala AMT Eusébio. Nenhum dado foi alterado.');
-                    input.value='';return;
                 }
-                if(!confirm('A restauração substituirá os dados correspondentes deste aplicativo pelos dados do backup. Deseja continuar?')){input.value='';return;}
-                // Gravação transacional: se uma gravação falhar, restaura os valores anteriores.
-                const previous={};
+                ['amt_events_data','amt_agent_profile_v35','amt_month_scales','amt_bank_payments_v1'].forEach(k=>{if(restored[k]!==undefined){const v=JSON.parse(restored[k]);if(v===null||typeof v!=='object')throw new Error('Campo inválido: '+k);}});
+                const pdfNote=isZip?`\nContracheques que serão restaurados: ${pdfRecords.length}`:'\nAtenção: este backup JSON antigo não contém contracheques. Os PDFs já existentes neste dispositivo serão preservados.';
+                if(!confirm('A restauração substituirá os dados e configurações correspondentes deste aplicativo.'+pdfNote+'\nDeseja continuar?')){input.value='';return;}
+                const previous={};for(const k of Object.keys(restored))previous[k]=localStorage.getItem(k);
                 try{
-                    Object.keys(restored).forEach(k=>{previous[k]=localStorage.getItem(k);});
                     Object.entries(restored).forEach(([k,v])=>localStorage.setItem(k,v));
-                }catch(writeError){
-                    console.error('Falha ao gravar backup:',writeError);
-                    Object.entries(previous).forEach(([k,v])=>{try{if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v);}catch(rollbackError){console.error('Falha ao reverter armazenamento:',rollbackError);}});
-                    alert('Não foi possível salvar o backup neste dispositivo. Os dados anteriores foram preservados sempre que possível. Verifique o espaço disponível e tente novamente.');
-                    input.value='';return;
-                }
-                // A restauração já foi gravada. Erros de atualização da interface não devem
-                // ser apresentados como falha de importação nem sugerir que os dados se perderam.
-                try{eventsData=JSON.parse(localStorage.getItem('amt_events_data')||'{}');}catch(e){eventsData={};console.error('Não foi possível recarregar os registros:',e);}
-                baseDutyDate=localStorage.getItem('amt_base_date')||'';
-                const legacyBaseInput=document.getElementById('settingsBaseDateInput');if(legacyBaseInput)legacyBaseInput.value=baseDutyDate;
-                const profile=localStorage.getItem('amt_agent_profile_v35');if(profile){try{applyProfile(JSON.parse(profile));}catch(e){console.error('Perfil restaurado, mas não foi possível atualizar sua exibição:',e);}}
-                let uiRefreshWarning=false;
-                [['renderApp',()=>renderApp()],['refreshManagementPanel',()=>refreshManagementPanel()],['renderSavedScaleConfigs',()=>renderSavedScaleConfigs()],['updateCountdown',()=>updateCountdown()]].forEach(([name,fn])=>{try{fn();}catch(e){uiRefreshWarning=true;console.error('Falha ao atualizar '+name+' após restaurar:',e);}});
-                alert(uiRefreshWarning?'Backup restaurado e salvo com sucesso. Alguns elementos da tela podem precisar ser atualizados ao reabrir o aplicativo.':'Backup restaurado com sucesso. Os dados foram salvos neste dispositivo.');
-                input.value='';
-            };
-            reader.onerror=()=>{alert('Não foi possível ler o arquivo selecionado.');input.value='';};
-            reader.readAsText(file);
-        }
+                    if(isZip){const db=await dbOpen();await new Promise((resolve,reject)=>{const tx=db.transaction('pdfs','readwrite'),store=tx.objectStore('pdfs');store.clear();pdfRecords.forEach(f=>store.put(f));tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Falha ao restaurar PDFs'));});db.close();}
+                }catch(err){Object.entries(previous).forEach(([k,v])=>{try{if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(_){}});throw err;}
+                try{eventsData=JSON.parse(localStorage.getItem('amt_events_data')||'{}')}catch(_){eventsData={};}baseDutyDate=localStorage.getItem('amt_base_date')||'';
+                const baseInput=document.getElementById('settingsBaseDateInput');if(baseInput)baseInput.value=baseDutyDate;const profile=localStorage.getItem('amt_agent_profile_v35');if(profile){try{applyProfile(JSON.parse(profile))}catch(e){console.error(e)}}
+                let warn=false;[['renderApp',()=>renderApp()],['refreshManagementPanel',()=>refreshManagementPanel()],['renderSavedScaleConfigs',()=>renderSavedScaleConfigs()],['updateCountdown',()=>updateCountdown()]].forEach(([n,fn])=>{try{fn()}catch(e){warn=true;console.error(n,e)}});
+                alert(warn?'Backup restaurado. Alguns elementos podem precisar ser atualizados ao reabrir o aplicativo.':'Backup restaurado com sucesso! Escalas, configurações, banco de horas, pagamentos, temas e contracheques foram recuperados.');
+            }catch(e){console.error('Falha ao importar backup:',e);alert('Não foi possível restaurar este backup. '+(e&&e.message?e.message:'O arquivo pode estar inválido ou corrompido.')+' Nenhum PDF foi apagado.');}
+            input.value='';
+        };
         async function resetAppData() {
             const storedPinHash=localStorage.getItem('amt_pin_hash');
             if(storedPinHash){
@@ -2062,6 +2087,102 @@ body * { touch-action:inherit; }
  window.openDateJump=function(){const m=document.getElementById('dateJumpModal');m.classList.remove('hidden');m.classList.add('flex');const input=document.getElementById('dateJumpInput');input.value='';input.focus();};
  window.closeDateJump=function(){const m=document.getElementById('dateJumpModal');m.classList.add('hidden');m.classList.remove('flex');};
  window.applyDateJump=function(){const v=document.getElementById('dateJumpInput').value.trim();const m=v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);if(!m){alert('Digite a data no formato DD/MM/AAAA, por exemplo 05/11/2026.');return;}const day=Number(m[1]),month=Number(m[2]),year=Number(m[3]);const d=new Date(year,month-1,day);if(d.getFullYear()!==year||d.getMonth()!==month-1||d.getDate()!==day){alert('A data digitada não é válida.');return;}jumpTargetDate=year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');currentDate=new Date(year,month-1,1);currentView='month';if(typeof renderApp==='function')renderApp();closeDateJump();setTimeout(()=>{const cell=document.querySelector('#monthView [data-date-key="'+jumpTargetDate+'"]');if(cell)cell.scrollIntoView({behavior:'smooth',block:'center'});},50);};
+
+/* ==========================================================================
+   ATUALIZAÇÃO 2026.11 — BANCO DE HORAS, CONTRACHEQUES E TEMAS
+   Os totais do banco são sempre recalculados a partir dos eventos atuais;
+   assim, apagar/corrigir uma hora extra no calendário corrige o saldo junto.
+   ========================================================================== */
+(function(){
+  const BANK_KEY='amt_bank_payments_v1';
+  const THEME_KEY='amt_color_theme_v1';
+  const themes={
+    amber:{name:'Âmbar original',bg:'rgba(238,232,220,.60)',dark:'rgba(23,22,19,.66)'},
+    ocean:{name:'Azul oceano',bg:'rgba(224,237,246,.66)',dark:'rgba(15,31,47,.72)'},
+    forest:{name:'Verde floresta',bg:'rgba(226,239,228,.68)',dark:'rgba(17,39,27,.72)'},
+    violet:{name:'Violeta',bg:'rgba(237,231,246,.68)',dark:'rgba(34,25,48,.72)'},
+    graphite:{name:'Grafite',bg:'rgba(230,232,235,.68)',dark:'rgba(27,30,35,.76)'}
+  };
+  function moneyHours(n){return (Number(n)||0).toLocaleString('pt-BR',{maximumFractionDigits:2})+' h';}
+  function readPayments(){try{return JSON.parse(localStorage.getItem(BANK_KEY)||'[]')}catch(_){return []}}
+  function writePayments(v){localStorage.setItem(BANK_KEY,JSON.stringify(v));}
+  function earnedHours(rate){let total=0;Object.entries((window.getEscalaEventsData&&window.getEscalaEventsData())||{}).forEach(([key,e])=>{if(!e||!e.extra)return;const x=e.extra;if(String(x.rate||'50')!==String(rate))return;if(x.type==='shift')total+=24;else if(x.type==='hours')total+=Math.max(0,Math.min(24,Number(x.hours)||0));});return total;}
+  function paidHours(rate){return readPayments().filter(x=>String(x.rate)===String(rate)).reduce((a,x)=>a+(Number(x.hours)||0),0);}
+  window.renderBankHours=function(){
+    const root=document.getElementById('bankHoursContent');if(!root)return;
+    root.innerHTML='';
+    [50,100].forEach(rate=>{
+      const earned=earnedHours(rate),paid=paidHours(rate),pending=earned-paid;
+      const card=document.createElement('section');card.className='rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/60 p-4 space-y-3';
+      card.innerHTML=`<div class="flex items-center justify-between"><h3 class="font-extrabold text-lg">Adicional ${rate}%</h3><span class="text-xs rounded-full px-3 py-1 ${rate===50?'bg-amber-100 text-amber-800':'bg-red-100 text-red-800'}">${rate}%</span></div><div class="grid grid-cols-3 gap-2 text-center"><div class="rounded-xl bg-gray-100 dark:bg-gray-800 p-2"><div class="text-xs text-gray-500">Geradas</div><strong class="text-lg">${moneyHours(earned)}</strong></div><div class="rounded-xl bg-gray-100 dark:bg-gray-800 p-2"><div class="text-xs text-gray-500">Pagas</div><strong class="text-lg">${moneyHours(paid)}</strong></div><div class="rounded-xl bg-gray-100 dark:bg-gray-800 p-2"><div class="text-xs text-gray-500">Pendentes</div><strong class="text-lg ${pending<0?'text-red-600':'text-emerald-600'}">${moneyHours(pending)}</strong></div></div><form class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2" data-rate="${rate}"><label class="text-xs font-semibold">Horas pagas<input name="hours" type="number" min="0.01" step="0.01" max="9999" required placeholder="Ex.: 12" class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-base"></label><label class="text-xs font-semibold">Data do pagamento<input name="date" type="date" required class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-base"></label><button class="self-end rounded-lg bg-emerald-600 text-white font-bold px-4 py-2.5" type="submit">Registrar pagamento</button></form>`;
+      root.appendChild(card);
+    });
+    root.querySelectorAll('form[data-rate]').forEach(form=>form.addEventListener('submit',e=>{e.preventDefault();const rate=form.dataset.rate;const hours=Number(form.elements.hours.value);const date=form.elements.date.value;if(!hours||hours<=0||!date)return;const arr=readPayments();arr.push({id:(crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())),rate,hours,date,createdAt:new Date().toISOString()});writePayments(arr);renderBankHours();}));
+    const history=document.createElement('section');history.className='rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/60 p-4';history.innerHTML='<h3 class="font-bold mb-2">Histórico de pagamentos lançados</h3>';
+    const payments=readPayments().sort((a,b)=>b.date.localeCompare(a.date));
+    if(!payments.length)history.innerHTML+='<p class="text-sm text-gray-500">Nenhum pagamento informado ainda.</p>';
+    else payments.forEach(x=>{const row=document.createElement('div');row.className='flex items-center justify-between gap-3 border-t border-gray-200 dark:border-gray-700 py-2 text-sm';const d=x.date.split('-').reverse().join('/');row.innerHTML=`<span>${d} · ${x.rate}% · ${moneyHours(x.hours)}</span><button type="button" class="text-red-600 font-semibold" aria-label="Excluir pagamento">Excluir</button>`;row.querySelector('button').onclick=()=>{if(confirm('Excluir este lançamento de pagamento?')){writePayments(readPayments().filter(p=>p.id!==x.id));renderBankHours();}};history.appendChild(row);});root.appendChild(history);
+  };
+  window.openExtraArea=function(which){const app=document.getElementById('appMain');const settings=document.getElementById('settingsScreen');if(settings)settings.classList.add('hidden');if(app)app.classList.add('hidden');document.getElementById('bankHoursScreen').classList.toggle('hidden',which!=='bank');document.getElementById('paystubScreen').classList.toggle('hidden',which!=='paystub');if(which==='bank')renderBankHours();if(which==='paystub')renderPaystubList();};
+  window.closeExtraArea=function(){document.getElementById('bankHoursScreen').classList.add('hidden');document.getElementById('paystubScreen').classList.add('hidden');const app=document.getElementById('appMain');if(app)app.classList.remove('hidden');};
+  // Contracheques em IndexedDB: PDFs não ocupam o limite pequeno do localStorage.
+  function dbOpen(){return new Promise((resolve,reject)=>{const req=indexedDB.open('amt_paystubs_db',1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('pdfs'))db.createObjectStore('pdfs',{keyPath:'month'});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
+  async function dbAll(){const db=await dbOpen();return new Promise((resolve,reject)=>{const r=db.transaction('pdfs','readonly').objectStore('pdfs').getAll();r.onsuccess=()=>{db.close();resolve(r.result||[])};r.onerror=()=>{db.close();reject(r.error)}})}
+  window.savePaystub=async function(input){const file=input.files&&input.files[0];if(!file)return;if(file.type!=='application/pdf'&&!file.name.toLowerCase().endsWith('.pdf')){alert('Selecione um arquivo PDF.');input.value='';return;}const month=document.getElementById('paystubMonth').value;if(!month){alert('Selecione o mês de referência do contracheque.');input.value='';return;}try{const db=await dbOpen();await new Promise((resolve,reject)=>{const tx=db.transaction('pdfs','readwrite');tx.objectStore('pdfs').put({month,name:file.name,type:'application/pdf',blob:file,updatedAt:new Date().toISOString()});tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close();input.value='';renderPaystubList();alert('Contracheque salvo neste dispositivo.');}catch(e){console.error(e);alert('Não foi possível salvar o PDF. Verifique o espaço disponível no dispositivo.');}};
+  window.renderPaystubList=async function(){const root=document.getElementById('paystubList');if(!root)return;root.innerHTML='<p class="text-sm text-gray-500">Carregando contracheques...</p>';try{const files=await dbAll();root.innerHTML='';if(!files.length){root.innerHTML='<p class="text-sm text-gray-500">Nenhum contracheque salvo ainda.</p>';return;}files.sort((a,b)=>b.month.localeCompare(a.month)).forEach(f=>{const item=document.createElement('div');item.className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-gray-700 p-3';const [y,m]=f.month.split('-');const label=new Date(+y,+m-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});item.innerHTML=`<div class="min-w-0"><div class="font-bold capitalize">${label}</div><div class="text-xs text-gray-500 truncate">${f.name}</div></div><div class="flex flex-wrap gap-2"><button class="rounded-lg bg-sky-600 text-white px-3 py-2 text-xs font-bold">Visualizar</button><button class="rounded-lg bg-blue-600 text-white px-3 py-2 text-xs font-bold">Baixar PDF</button><button class="rounded-lg bg-red-100 text-red-700 px-3 py-2 text-xs font-bold">Excluir</button></div>`;item.querySelectorAll('button')[0].onclick=()=>{const url=URL.createObjectURL(f.blob);window.open(url,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(url),60000)};item.querySelectorAll('button')[1].onclick=()=>{const url=URL.createObjectURL(f.blob);const a=document.createElement('a');a.href=url;a.download=f.name||`contracheque-${f.month}.pdf`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500)};item.querySelectorAll('button')[2].onclick=async()=>{if(!confirm('Excluir o contracheque de '+label+'?'))return;const db=await dbOpen();await new Promise((resolve,reject)=>{const tx=db.transaction('pdfs','readwrite');tx.objectStore('pdfs').delete(f.month);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close();renderPaystubList();};root.appendChild(item);});}catch(e){console.error(e);root.innerHTML='<p class="text-sm text-red-600">Não foi possível acessar os PDFs salvos.</p>';}};
+  function addFeatureScreens(){
+    const app=document.getElementById('appMain');if(!app||document.getElementById('newFeaturesNav'))return;
+    const nav=document.createElement('section');nav.id='newFeaturesNav';nav.className='grid grid-cols-2 gap-2';nav.innerHTML='<button type="button" onclick="openExtraArea(\'bank\')" class="rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900 px-3 py-3 font-bold text-sm"><i class="fa-solid fa-hourglass-half mr-2"></i>Banco de horas</button><button type="button" onclick="openExtraArea(\'paystub\')" class="rounded-xl border border-sky-300 bg-sky-50 text-sky-800 dark:bg-sky-950/30 dark:text-sky-300 dark:border-sky-900 px-3 py-3 font-bold text-sm"><i class="fa-solid fa-file-invoice-dollar mr-2"></i>Contracheques</button>';
+    app.insertBefore(nav,app.firstChild);
+    const screens=document.createElement('div');screens.innerHTML=`<main id="bankHoursScreen" class="hidden max-w-3xl mx-auto px-4 py-6 space-y-4"><div class="flex items-center justify-between"><div><h2 class="text-xl font-extrabold">Banco de horas</h2><p class="text-sm text-gray-500">Saldo calculado automaticamente pelos registros do calendário.</p></div><button onclick="closeExtraArea()" class="rounded-xl bg-amber-500 text-black px-4 py-2 font-bold">Voltar</button></div><div class="rounded-xl bg-blue-50 dark:bg-blue-950/30 p-3 text-xs text-blue-900 dark:text-blue-200">Plantões extras são contabilizados como 24 horas. Horas extras usam a quantidade registrada no dia. Ao corrigir ou excluir um evento no calendário, o saldo gerado é recalculado automaticamente. Registre abaixo somente as horas efetivamente pagas.</div><div id="bankHoursContent" class="space-y-3"></div></main><main id="paystubScreen" class="hidden max-w-3xl mx-auto px-4 py-6 space-y-4"><div class="flex items-center justify-between"><div><h2 class="text-xl font-extrabold">Contracheques</h2><p class="text-sm text-gray-500">Seus PDFs ficam armazenados neste dispositivo.</p></div><button onclick="closeExtraArea()" class="rounded-xl bg-amber-500 text-black px-4 py-2 font-bold">Voltar</button></div><section class="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/60 p-4 space-y-3"><h3 class="font-bold">Adicionar contracheque mensal</h3><label class="block text-sm font-semibold">Mês de referência<input id="paystubMonth" type="month" class="mt-1 w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 text-base"></label><label class="block text-sm font-semibold">Arquivo PDF<input id="paystubFile" type="file" accept="application/pdf,.pdf" onchange="savePaystub(this)" class="mt-1 block w-full text-sm"></label><p class="text-xs text-gray-500">Um arquivo por mês. Se enviar outro PDF para o mesmo mês, ele substituirá o anterior.</p></section><section class="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/60 p-4 space-y-3"><h3 class="font-bold">Contracheques salvos</h3><div id="paystubList" class="space-y-2"></div></section></main>`;
+    app.parentNode.insertBefore(screens,app.nextSibling);
+  }
+  function applyColorTheme(key){const t=themes[key]||themes.amber;document.documentElement.dataset.colorTheme=key;document.documentElement.style.setProperty('--amt-theme-light',t.bg);document.documentElement.style.setProperty('--amt-theme-dark',t.dark);localStorage.setItem(THEME_KEY,key);}
+  window.setThemeMode=function(mode){if(mode==='dark')document.documentElement.classList.add('dark');else document.documentElement.classList.remove('dark');localStorage.setItem('amt_theme',mode);};
+  window.toggleThemeMenu=function(){const menu=document.getElementById('amtThemeMenu');if(menu)menu.classList.toggle('hidden');};
+  function addThemeMenu(){const header=document.querySelector('header');const trigger=document.getElementById('btnThemeToggle');if(!header||!trigger||document.getElementById('amtThemeMenu'))return;const menu=document.createElement('div');menu.id='amtThemeMenu';menu.className='hidden absolute right-2 top-16 z-[80] w-64 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 shadow-2xl space-y-3';menu.innerHTML='<div class="font-bold text-sm">Aparência do aplicativo</div><div class="grid grid-cols-2 gap-2"><button type="button" id="amtModeLight" class="rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm font-semibold">☀️ Claro</button><button type="button" id="amtModeDark" class="rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm font-semibold">🌙 Escuro</button></div><label class="block text-xs font-bold">Paleta de cores<select id="amtThemeMenuSelect" class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-sm"><option value="amber">Âmbar original</option><option value="ocean">Azul oceano</option><option value="forest">Verde floresta</option><option value="violet">Violeta</option><option value="graphite">Grafite</option></select></label><p class="text-[11px] text-gray-500">As cores de plantões, folgas, extras e trocas não são alteradas.</p>';header.appendChild(menu);menu.querySelector('#amtModeLight').onclick=()=>{setThemeMode('light');menu.classList.add('hidden')};menu.querySelector('#amtModeDark').onclick=()=>{setThemeMode('dark');menu.classList.add('hidden')};const sel=menu.querySelector('select');sel.value=localStorage.getItem(THEME_KEY)||'amber';sel.onchange=()=>applyColorTheme(sel.value);document.addEventListener('click',e=>{if(!menu.contains(e.target)&&!trigger.contains(e.target))menu.classList.add('hidden')});}
+  function addThemePicker(){const settings=document.getElementById('settingsScreen');if(!settings||document.getElementById('colorThemePicker'))return;const sec=document.createElement('section');sec.id='colorThemePicker';sec.className='rounded-2xl border border-gray-200 dark:border-gray-700 bg-[#F8F5ED] dark:bg-[#211F1B] p-4 space-y-3';sec.innerHTML='<h3 class="font-bold text-sm"><i class="fa-solid fa-palette text-amber-500 mr-2"></i>Personalização de cores</h3><p class="text-xs text-gray-500 dark:text-gray-400">Escolha uma paleta para o fundo do aplicativo. As cores dos plantões, folgas, extras e trocas no calendário permanecem inalteradas.</p><select id="amtColorThemeSelect" class="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-base"><option value="amber">Âmbar original</option><option value="ocean">Azul oceano</option><option value="forest">Verde floresta</option><option value="violet">Violeta</option><option value="graphite">Grafite</option></select>';const heading=settings.firstElementChild;settings.insertBefore(sec,heading?heading.nextSibling:null);const sel=sec.querySelector('select');sel.value=localStorage.getItem(THEME_KEY)||'amber';sel.onchange=()=>applyColorTheme(sel.value);}
+  function enhanceScaleForms(){
+    const monthOptions=()=>{const out=[];const now=new Date();for(let i=-24;i<=36;i++){const d=new Date(now.getFullYear(),now.getMonth()+i,1),v=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');out.push({v,label:d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})});}return out;};
+    ['customScaleStartMonth','customScaleEndMonth','clearScaleMonth'].forEach(id=>{const el=document.getElementById(id);if(!el||el.tagName!=='SELECT')return;const old=el.value;el.innerHTML='<option value="" selected>'+(id==='clearScaleMonth'?'Selecionar mês':'Selecione o mês')+'</option>';monthOptions().forEach(o=>{const op=document.createElement('option');op.value=o.v;op.textContent=o.label;el.appendChild(op)});if(old)el.value=old;});
+    const monthly=document.getElementById('monthlyScaleMonth');if(monthly){monthly.innerHTML='<option value="" selected>Selecione o mês</option>';monthOptions().forEach(o=>{const op=document.createElement('option');op.value=o.v;op.textContent=o.label;monthly.appendChild(op);});monthly.value='';}
+    const monthDatePairs=[['monthlyScaleMonth','monthlyScaleBaseDate'],['customScaleStartMonth','customScaleBaseDate'],['customScaleStartMonth','customScaleBaseDate']];
+    const updateDateBounds=(monthId,dateId)=>{const m=document.getElementById(monthId),d=document.getElementById(dateId);if(!m||!d)return;const key=m.value;if(key){const [y,mo]=key.split('-').map(Number);d.min=key+'-01';d.max=key+'-'+String(new Date(y,mo,0).getDate()).padStart(2,'0');}else{d.removeAttribute('min');d.removeAttribute('max');}};
+    [['monthlyScaleMonth','monthlyScaleBaseDate'],['customScaleStartMonth','customScaleBaseDate']].forEach(([m,d])=>{const el=document.getElementById(m);if(el){el.addEventListener('change',()=>updateDateBounds(m,d));updateDateBounds(m,d);}});
+    const start=document.getElementById('customScaleStartMonth'),end=document.getElementById('customScaleEndMonth'),date=document.getElementById('customScaleBaseDate');if(start&&end){start.addEventListener('change',()=>{if(start.value&&end.value<start.value){end.value=start.value;updateMonthDisplay(end);}if(date&&start.value){const [y,m]=start.value.split('-').map(Number);date.min=start.value+'-01';if(end.value){const [ey,em]=end.value.split('-').map(Number);date.max=ey+'-'+String(em).padStart(2,'0')+'-'+String(new Date(ey,em,0).getDate()).padStart(2,'0');}}});end.addEventListener('change',()=>{if(start.value&&end.value&&end.value<start.value){end.value=start.value;updateMonthDisplay(end);}if(date&&end.value){const [y,m]=end.value.split('-').map(Number);date.max=end.value+'-'+String(new Date(y,m,0).getDate()).padStart(2,'0');}});}
+    const mt=document.getElementById('monthlyScaleType'),ct=document.getElementById('customScaleType');if(mt&&!mt.value)mt.value='';if(ct&&!ct.value)ct.value='';
+  }
+  // Após salvar, limpa os campos de escolha e volta aos textos de orientação.
+  function resetScaleSelectors(){['monthlyScaleMonth','monthlyScaleType','customScaleType','customScaleStartMonth','customScaleEndMonth','clearScaleMonth'].forEach(id=>{const e=document.getElementById(id);if(e){e.value='';if(e.tagName==='SELECT')updateMonthDisplay(e);}});['monthlyScaleBaseDate','customScaleBaseDate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';const b=document.getElementById(id+'Display');if(b){b.textContent='Selecionar data';b.classList.add('text-gray-500');}});}
+  let activeMonthSelectId=null;
+  window.openScaleMonthPicker=function(id){const target=document.getElementById(id);if(!target)return;activeMonthSelectId=id;let modal=document.getElementById('amtScaleMonthPicker');if(!modal){modal=document.createElement('div');modal.id='amtScaleMonthPicker';modal.className='fixed inset-0 z-[100] hidden items-center justify-center bg-black/60 p-3';modal.innerHTML='<div class="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-900 p-4 shadow-2xl space-y-4"><h3 class="font-extrabold">Selecionar mês</h3><select id="amtMonthPickerSelect" class="w-full rounded-xl border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 text-base"></select><div class="flex justify-between gap-2"><button type="button" id="amtMonthPickerBack" class="rounded-xl border border-gray-300 dark:border-gray-700 px-4 py-2 font-semibold">Voltar</button><button type="button" id="amtMonthPickerOk" class="rounded-xl bg-amber-500 px-5 py-2 font-bold text-black">OK</button></div></div>';document.body.appendChild(modal);modal.addEventListener('click',e=>{if(e.target===modal)closeScaleMonthPicker();});modal.querySelector('#amtMonthPickerBack').onclick=closeScaleMonthPicker;modal.querySelector('#amtMonthPickerOk').onclick=()=>{const t=document.getElementById(activeMonthSelectId),v=modal.querySelector('#amtMonthPickerSelect').value;if(v){t.value=v;t.dispatchEvent(new Event('change',{bubbles:true}));updateMonthDisplay(t);}closeScaleMonthPicker();};}const picker=modal.querySelector('#amtMonthPickerSelect');picker.innerHTML='';Array.from(target.options).filter(o=>o.value).forEach(o=>{const op=document.createElement('option');op.value=o.value;op.textContent=o.textContent;picker.appendChild(op)});picker.value=target.value||'';modal.classList.remove('hidden');modal.classList.add('flex');};
+  function closeScaleMonthPicker(){const m=document.getElementById('amtScaleMonthPicker');if(m){m.classList.add('hidden');m.classList.remove('flex');}activeMonthSelectId=null;}
+  function updateMonthDisplay(select){const b=document.getElementById(select.id+'Display');if(!b)return;const opt=select.options[select.selectedIndex];b.textContent=select.value?(opt?.textContent||'Selecionar mês'):(select.id==='clearScaleMonth'?'Selecionar mês':'Selecione o mês');b.classList.toggle('text-gray-500',!select.value);}
+  function installMonthPickerButtons(){['monthlyScaleMonth','customScaleStartMonth','customScaleEndMonth','clearScaleMonth'].forEach(id=>{const el=document.getElementById(id);if(!el||document.getElementById(id+'Display'))return;el.classList.add('hidden');const b=document.createElement('button');b.type='button';b.id=id+'Display';b.className='mt-1 w-full text-left px-3 py-2 rounded-xl bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm text-gray-500';b.textContent=id==='clearScaleMonth'?'Selecionar mês':'Selecione o mês';b.onclick=()=>openScaleMonthPicker(id);el.insertAdjacentElement('afterend',b);el.addEventListener('change',()=>updateMonthDisplay(el));});}
+  let activeDatePicker=null, pickerMonth=new Date(), pickerSelected='';
+  window.openScaleDatePicker=function(which){
+    const isMonthly=which==='monthly', monthId=isMonthly?'monthlyScaleMonth':'customScaleStartMonth', dateId=isMonthly?'monthlyScaleBaseDate':'customScaleBaseDate';
+    const monthValue=document.getElementById(monthId)?.value||'';if(!monthValue){alert(isMonthly?'Selecione primeiro o mês da escala.':'Selecione primeiro o mês inicial.');return;}
+    const [yy,mm]=monthValue.split('-').map(Number);pickerMonth=new Date(yy,mm-1,1);pickerSelected=document.getElementById(dateId)?.value||'';activeDatePicker={which,dateId,monthId};
+    let modal=document.getElementById('amtScaleDatePicker');if(!modal){modal=document.createElement('div');modal.id='amtScaleDatePicker';modal.className='fixed inset-0 z-[100] hidden items-center justify-center bg-black/60 p-3';modal.innerHTML='<div class="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-900 p-4 shadow-2xl space-y-3"><div class="flex items-center justify-between"><button type="button" id="amtPickerPrev" class="rounded-lg px-3 py-2 bg-gray-100 dark:bg-gray-800">‹</button><strong id="amtPickerTitle" class="capitalize"></strong><button type="button" id="amtPickerNext" class="rounded-lg px-3 py-2 bg-gray-100 dark:bg-gray-800">›</button></div><div class="grid grid-cols-7 gap-1 text-center text-xs text-gray-500"><span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span></div><div id="amtPickerDays" class="grid grid-cols-7 gap-1"></div><div class="flex justify-between gap-2 pt-2"><button type="button" id="amtPickerBack" class="rounded-xl border border-gray-300 dark:border-gray-700 px-4 py-2 font-semibold">Voltar</button><button type="button" id="amtPickerOk" class="rounded-xl bg-amber-500 px-5 py-2 font-bold text-black">OK</button></div></div>';document.body.appendChild(modal);modal.addEventListener('click',e=>{if(e.target===modal)closeScaleDatePicker();});modal.querySelector('#amtPickerPrev').onclick=()=>{pickerMonth.setMonth(pickerMonth.getMonth()-1);drawScaleDatePicker();};modal.querySelector('#amtPickerNext').onclick=()=>{pickerMonth.setMonth(pickerMonth.getMonth()+1);drawScaleDatePicker();};modal.querySelector('#amtPickerBack').onclick=closeScaleDatePicker;modal.querySelector('#amtPickerOk').onclick=()=>{if(!pickerSelected){alert('Selecione uma data.');return;}const hidden=document.getElementById(activeDatePicker.dateId);hidden.value=pickerSelected;const b=document.getElementById(activeDatePicker.dateId+'Display');const [y,m,d]=pickerSelected.split('-');b.textContent=d+'/'+m+'/'+y;b.classList.remove('text-gray-500');closeScaleDatePicker();};}
+    modal.classList.remove('hidden');modal.classList.add('flex');drawScaleDatePicker();
+  };
+  function closeScaleDatePicker(){const m=document.getElementById('amtScaleDatePicker');if(m){m.classList.add('hidden');m.classList.remove('flex');}activeDatePicker=null;}
+  function drawScaleDatePicker(){const modal=document.getElementById('amtScaleDatePicker');if(!modal||!activeDatePicker)return;const which=activeDatePicker.which;const startKey=document.getElementById(activeDatePicker.monthId).value;let minMonth=startKey,maxMonth=startKey;if(which==='custom'){maxMonth=document.getElementById('customScaleEndMonth').value||startKey;}const [sy,sm]=startKey.split('-').map(Number),[ey,em]=maxMonth.split('-').map(Number);const min=new Date(sy,sm-1,1),max=new Date(ey,em-1,1);modal.querySelector('#amtPickerTitle').textContent=pickerMonth.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});modal.querySelector('#amtPickerPrev').disabled=pickerMonth<=min;modal.querySelector('#amtPickerNext').disabled=pickerMonth>=max;modal.querySelector('#amtPickerPrev').classList.toggle('opacity-30',pickerMonth<=min);modal.querySelector('#amtPickerNext').classList.toggle('opacity-30',pickerMonth>=max);const grid=modal.querySelector('#amtPickerDays');grid.innerHTML='';const first=new Date(pickerMonth.getFullYear(),pickerMonth.getMonth(),1),offset=first.getDay(),days=new Date(pickerMonth.getFullYear(),pickerMonth.getMonth()+1,0).getDate();for(let i=0;i<offset;i++)grid.appendChild(document.createElement('span'));for(let d=1;d<=days;d++){const key=pickerMonth.getFullYear()+'-'+String(pickerMonth.getMonth()+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');const b=document.createElement('button');b.type='button';b.textContent=d;b.className='rounded-lg py-2 text-sm '+(pickerSelected===key?'bg-amber-500 text-black font-extrabold':'bg-gray-50 dark:bg-gray-800');b.onclick=()=>{pickerSelected=key;drawScaleDatePicker();};grid.appendChild(b);}}
+  document.addEventListener('DOMContentLoaded',()=>{
+    addFeatureScreens();addThemePicker();addThemeMenu();enhanceScaleForms();installMonthPickerButtons();applyColorTheme(localStorage.getItem(THEME_KEY)||'amber');
+    const originalMonthly=window.saveMonthlyScaleFromSettings,originalCustom=window.saveCustomScaleConfigSeparated;
+    if(typeof originalMonthly==='function')window.saveMonthlyScaleFromSettings=function(){const before=localStorage.getItem('amt_month_scales'),month=document.getElementById('monthlyScaleMonth').value,date=document.getElementById('monthlyScaleBaseDate').value,scale=document.getElementById('monthlyScaleType').value;originalMonthly();let saved=false;try{saved=JSON.parse(localStorage.getItem('amt_month_scales')||'[]').some(c=>c.startMonth===month&&c.endMonth===month&&c.baseDate===date&&c.scale===scale);}catch(_){}if(saved||localStorage.getItem('amt_month_scales')!==before)resetScaleSelectors();};
+    if(typeof originalCustom==='function')window.saveCustomScaleConfigSeparated=function(){const before=localStorage.getItem('amt_month_scales'),start=document.getElementById('customScaleStartMonth').value,end=document.getElementById('customScaleEndMonth').value,date=document.getElementById('customScaleBaseDate').value,scale=document.getElementById('customScaleType').value;originalCustom();let saved=false;try{saved=JSON.parse(localStorage.getItem('amt_month_scales')||'[]').some(c=>c.startMonth===start&&c.endMonth===end&&c.baseDate===date&&c.scale===scale);}catch(_){}if(saved||localStorage.getItem('amt_month_scales')!==before)resetScaleSelectors();};
+    const originalSave=window.saveDayModalData;if(typeof originalSave==='function')window.saveDayModalData=function(){const type=document.getElementById('modalExtraType')?.value,hours=document.getElementById('modalExtraHours')?.value;if(type==='hours'&&(!hours||Number(hours)<=0)){alert('Selecione a quantidade de horas extras.');return;}originalSave();setTimeout(()=>{if(typeof renderBankHours==='function')renderBankHours();},0);};
+    ['clearSpecificScaleMonth','clearAllScaleConfigs'].forEach(name=>{const fn=window[name];if(typeof fn==='function')window[name]=function(){fn();const e=document.getElementById('clearScaleMonth');if(e)updateMonthDisplay(e);};});
+    const oldToggle=window.toggleTheme;window.toggleTheme=function(){oldToggle();applyColorTheme(localStorage.getItem(THEME_KEY)||'amber');};
+    setTimeout(()=>{['monthlyScaleMonth','monthlyScaleType','customScaleType','customScaleStartMonth','customScaleEndMonth','clearScaleMonth'].forEach(id=>{const e=document.getElementById(id);if(e){e.value='';if(e.tagName==='SELECT')updateMonthDisplay(e);}});['monthlyScaleBaseDate','customScaleBaseDate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';const b=document.getElementById(id+'Display');if(b){b.textContent='Selecionar data';b.classList.add('text-gray-500');}});},0);
+    document.getElementById('monthlyScaleMonth')?.addEventListener('change',()=>{const e=document.getElementById('monthlyScaleBaseDate');if(e)e.value='';const b=document.getElementById('monthlyScaleBaseDateDisplay');if(b){b.textContent='Selecionar data';b.classList.add('text-gray-500');}});
+    document.getElementById('customScaleStartMonth')?.addEventListener('change',()=>{const e=document.getElementById('customScaleBaseDate');if(e)e.value='';const b=document.getElementById('customScaleBaseDateDisplay');if(b){b.textContent='Selecionar data';b.classList.add('text-gray-500');}});
+  });
+})();
+
 })();
 </script>
 

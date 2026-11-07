@@ -1,4 +1,4 @@
-const CACHE_NAME = 'amt-eusebio-v4-scrollfix';
+const CACHE_NAME = 'amt-eusebio-v6-full-zip-backup';
 const APP_SHELL = [
   './',
   './index.html',
@@ -23,7 +23,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(key => key.startsWith('escala-amt-eusebio-') && key !== CACHE_NAME).map(key => caches.delete(key)));
+    await Promise.all(keys.filter(key => key.includes('eusebio') && key !== CACHE_NAME).map(key => caches.delete(key)));
     await self.clients.claim();
   })());
 });
