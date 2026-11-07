@@ -1,4 +1,4 @@
-const CACHE_NAME = 'amt-eusebio-v6-full-zip-backup';
+const CACHE_NAME = 'amt-eusebio-v9-ios-month-wheel';
 const APP_SHELL = [
   './',
   './index.html',
