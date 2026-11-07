@@ -1,4 +1,4 @@
-const CACHE_NAME = 'amt-eusebio-v9-ios-month-wheel';
+const CACHE_NAME = 'amt-eusebio-v9-ios-month-wheel-depth3';
 const APP_SHELL = [
   './',
   './index.html',
