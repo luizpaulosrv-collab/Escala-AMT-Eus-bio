@@ -126,6 +126,44 @@ body { height:auto !important; min-height:100vh !important; min-height:100dvh !i
 body * { touch-action:inherit; }
 #appMain, #settingsScreen { height:auto !important; min-height:0; overflow-y:visible !important; touch-action:auto !important; }
 </style>
+
+<style id="amt-black-mono-interface-v2">
+/* Preto Absoluto Monocromático: neutraliza somente a interface.
+   O calendário (#monthGrid) mantém integralmente suas cores semânticas. */
+html[data-color-theme="blackMono"] button:not(#monthGrid button),
+html[data-color-theme="blackMono"] [role="button"]:not(#monthGrid [role="button"]) {
+  filter: grayscale(1) !important;
+}
+html[data-color-theme="blackMono"] select,
+html[data-color-theme="blackMono"] input:not([type="checkbox"]):not([type="radio"]),
+html[data-color-theme="blackMono"] textarea {
+  accent-color: #bdbdbd !important;
+}
+html[data-color-theme="blackMono"] select:focus,
+html[data-color-theme="blackMono"] input:focus,
+html[data-color-theme="blackMono"] textarea:focus {
+  --tw-ring-color: #a3a3a3 !important;
+  border-color: #a3a3a3 !important;
+}
+html[data-color-theme="blackMono"] :not(#monthGrid) > span[class*="bg-"],
+html[data-color-theme="blackMono"] :not(#monthGrid) > i[class*="text-"],
+html[data-color-theme="blackMono"] :not(#monthGrid) > svg[class*="text-"] {
+  filter: grayscale(1) !important;
+}
+html[data-color-theme="blackMono"] .text-amber-400,
+html[data-color-theme="blackMono"] .text-amber-500,
+html[data-color-theme="blackMono"] .text-amber-600,
+html[data-color-theme="blackMono"] .text-blue-400,
+html[data-color-theme="blackMono"] .text-blue-500,
+html[data-color-theme="blackMono"] .text-sky-500,
+html[data-color-theme="blackMono"] .text-emerald-400,
+html[data-color-theme="blackMono"] .text-emerald-500,
+html[data-color-theme="blackMono"] .text-red-400,
+html[data-color-theme="blackMono"] .text-red-500 {
+  color: #c4c4c4 !important;
+}
+</style>
+
 </head>
 <body class="bg-[#EEE8DC] dark:bg-[#171613] text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-300 pb-12">
 
