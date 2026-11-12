@@ -1,4 +1,4 @@
-const CACHE_NAME = 'amt-eusebio-v11-black-mono-interface';
+const CACHE_NAME = 'amt-eusebio-v12-bank-holidays-reports';
 const APP_SHELL = [
   './',
   './index.html',
