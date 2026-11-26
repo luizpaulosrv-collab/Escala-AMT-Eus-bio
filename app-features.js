@@ -1,32 +1,47 @@
 
 (function(){
  const PROFILE_KEY='amt_agent_profile_v35';
- let editingProfile=false;
+ let editingProfile=false, draftPhoto='', photoJob=0, photoBusy=false;
+ const el=id=>document.getElementById(id);
+ const headerImage=el('agentHeaderImage'), crestSource=headerImage.getAttribute('src'), crestClass=headerImage.className;
+ const validPhoto=v=>typeof v==='string'&&/^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(v)&&v.length<500000;
+ const localDate=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+ function serviceTime(value){if(!/^\d{4}-\d{2}-\d{2}$/.test(value||'')||value>localDate())return '';const [y,m,d]=value.split('-').map(Number),today=new Date(localDate()+'T00:00:00Z');let months=(today.getUTCFullYear()-y)*12+today.getUTCMonth()-m+1;const anchor=n=>{const first=new Date(Date.UTC(y,m-1+n,1));return new Date(Date.UTC(first.getUTCFullYear(),first.getUTCMonth(),Math.min(d,new Date(Date.UTC(first.getUTCFullYear(),first.getUTCMonth()+1,0)).getUTCDate())));};if(anchor(months)>today)months--;const days=Math.round((today-anchor(months))/86400000);return `${Math.floor(months/12)} ano(s), ${months%12} mês(es) e ${days} dia(s)`;}
+ function refreshPhoto(){const selected=document.querySelector('input[name="agentImage"]:checked').value==='photo';el('agentPhotoControls').hidden=!selected;el('agentPhotoPreview').hidden=!draftPhoto;if(draftPhoto)el('agentPhotoPreview').src=draftPhoto;else el('agentPhotoPreview').removeAttribute('src');}
+ document.querySelectorAll('input[name="agentImage"]').forEach(x=>x.addEventListener('change',refreshPhoto));
+ el('agentPhotoRemove').onclick=()=>{photoJob++;photoBusy=false;draftPhoto='';el('agentPhotoFile').value='';el('agentPhotoStatus').textContent='';document.querySelector('input[name="agentImage"][value="crest"]').checked=true;refreshPhoto();};
+ el('agentPhotoFile').onchange=async()=>{const file=el('agentPhotoFile').files[0];if(!file)return;const job=++photoJob;photoBusy=true;el('agentPhotoStatus').textContent='Preparando foto…';const url=URL.createObjectURL(file);try{const img=new Image();await new Promise((ok,no)=>{img.onload=ok;img.onerror=no;img.src=url;});const c=document.createElement('canvas');c.width=c.height=384;const side=Math.min(img.naturalWidth,img.naturalHeight);if(!side)throw Error('Imagem inválida');c.getContext('2d').drawImage(img,(img.naturalWidth-side)/2,(img.naturalHeight-side)/2,side,side,0,0,384,384);const data=c.toDataURL('image/jpeg',.82);if(!validPhoto(data))throw Error('Imagem inválida');if(job===photoJob){draftPhoto=data;el('agentPhotoStatus').textContent='Foto pronta.';refreshPhoto();}}catch(e){if(job===photoJob)el('agentPhotoStatus').textContent='Não foi possível abrir a foto. Tente JPEG ou PNG.';}finally{URL.revokeObjectURL(url);if(job===photoJob)photoBusy=false;}};
+
  window.showAgentRegistration=function(editMode=false){
    editingProfile=!!editMode;
    const p=JSON.parse(amtStorage.getItem(PROFILE_KEY)||'null');
    document.getElementById('agentRegistrationTitle').textContent=editingProfile?'Editar cadastro de servidor(a)':'Cadastro de servidor(a)';
    const saveBtn=document.querySelector('#agentProfileForm button[type="submit"]');
    if(saveBtn)saveBtn.textContent=editingProfile?'Salvar alterações':'Salvar cadastro';
-   if(p){document.getElementById('agentNameInput').value=p.name||'';document.getElementById('agentMatriculaInput').value=p.matricula||'';}
+   el('agentNameInput').value=p?.name||'';el('agentMatriculaInput').value=p?.matricula||'';el('agentFullName').value=p?.fullName||'';el('agentFullName').required=!p||!!p.fullName;el('agentTeam').value=p?.team||'';el('agentAdmission').value=p?.admission||'';el('agentAdmission').max=localDate();photoJob++;photoBusy=false;draftPhoto=validPhoto(p?.photo)?p.photo:'';el('agentPhotoFile').value='';el('agentPhotoStatus').textContent='';document.querySelector('input[name="agentImage"][value="'+(p?.imageMode==='photo'&&draftPhoto?'photo':'crest')+'"]').checked=true;refreshPhoto();
    document.getElementById('agentRegistration').classList.remove('hidden');
  };
  window.cancelAgentRegistration=function(){document.getElementById('agentRegistration').classList.add('hidden');if(editingProfile){const settings=document.getElementById('settingsScreen');if(settings)settings.classList.remove('hidden');}else if(!amtStorage.getItem(PROFILE_KEY)){document.getElementById('welcomeScreen').classList.remove('hidden');}editingProfile=false;};
  function applyProfile(p){
+   const photo=p.imageMode==='photo'&&validPhoto(p.photo);headerImage.src=photo?p.photo:crestSource;headerImage.className=photo?crestClass.replace('object-contain','object-cover')+' rounded-full':crestClass;headerImage.alt=photo?'Foto de perfil':'Brasão da Autarquia Municipal de Trânsito de Eusébio';
+   const time=serviceTime(p.admission);el('agentServiceTime').textContent=time?'Tempo de serviço: '+time:'';
+
    document.getElementById('profileNameDisplay').textContent='AGT '+p.name;
    document.getElementById('profileMatriculaDisplay').textContent='Matrícula: '+p.matricula;
    if(typeof updateProfileScaleDisplay==='function')updateProfileScaleDisplay();else document.getElementById('profileScaleDisplay').textContent='Escala: não configurada';
-   document.getElementById('welcomeGreeting').textContent='Bem vindo(a), AGT '+p.name+'!';
+   document.getElementById('welcomeGreeting').textContent='Bem-vindo(a), AGT '+p.name+'!';
  }
  const profileForm=document.getElementById('agentProfileForm');
  if(profileForm) profileForm.addEventListener('submit',async function(e){
    e.preventDefault();
    const nameInput=document.getElementById('agentNameInput');
    const matriculaInput=document.getElementById('agentMatriculaInput');
-   const p={name:(nameInput?.value||'').trim(),matricula:(matriculaInput?.value||'').trim()};
+   const previous=JSON.parse(amtStorage.getItem(PROFILE_KEY)||'{}');const p={...previous,name:(nameInput?.value||'').trim(),matricula:(matriculaInput?.value||'').trim(),fullName:el('agentFullName').value.trim(),team:el('agentTeam').value.trim(),admission:el('agentAdmission').value,imageMode:document.querySelector('input[name="agentImage"]:checked').value,photo:draftPhoto};
+   if(photoBusy){alert('Aguarde a preparação da foto.');return;}if(el('agentFullName').required&&!p.fullName){alert('Informe o nome completo.');return;}if(p.admission&&p.admission>localDate()){alert('A data de admissão não pode ser futura.');return;}if(p.imageMode==='photo'&&!validPhoto(p.photo)){alert('Escolha uma foto ou selecione o brasão.');return;}
    if(!p.name||!p.matricula){alert('Preencha o nome do(a) servidor(a) e a matrícula para continuar.');return;}
    try {
      amtStorage.setItem(PROFILE_KEY,JSON.stringify(p));
+     await amtStorage.flush();
      applyProfile(p);
      // Fechar primeiro as telas de entrada para garantir a transição mesmo se
      // algum cálculo secundário do calendário falhar.
