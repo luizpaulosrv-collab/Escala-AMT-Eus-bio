@@ -1,6 +1,6 @@
-const CACHE_NAME='amt-eusebio-2026.11.26-2';
+const CACHE_NAME='amt-eusebio-2026.11.26-3';
 const APP_SHELL=['./','./index.html','./storage.js','./boot.js','./app-core.js','./app-features.js','./backup.js','./cloud.js','./updates.js','./version.json','./fundo-amt.jpeg','./brasao-amt-oficial.jpeg','./manifest.webmanifest','./apple-touch-icon.png','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png','./icons/icon-180.png'];
-self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(CACHE_NAME);await c.addAll(APP_SHELL.map(x=>new Request(x,{cache:'reload'})));})()));
+self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(CACHE_NAME);await c.addAll(APP_SHELL.map(x=>new Request(x,{cache:'reload'})));await self.skipWaiting();})()));
 self.addEventListener('message',e=>{if(e.data?.type==='SKIP_WAITING')self.skipWaiting();});
 self.addEventListener('activate',e=>e.waitUntil((async()=>{for(const k of await caches.keys())if(k.startsWith('amt-eusebio-')&&k!==CACHE_NAME)await caches.delete(k);await self.clients.claim();})()));
 self.addEventListener('fetch',e=>{const r=e.request,u=new URL(r.url);if(r.method!=='GET'||u.origin!==self.location.origin||u.pathname.endsWith('/version.json'))return;e.respondWith((async()=>{const c=await caches.open(CACHE_NAME);if(r.mode==='navigate')return await c.match('./index.html')||fetch(r);return await c.match(r)||fetch(r);})());});

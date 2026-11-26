@@ -1117,18 +1117,18 @@
             const next = new Date(today);
             let guard = 0;
             while (!isDutyDay(next) && guard++ < 8) next.setDate(next.getDate()+1);
-            document.getElementById('dashToday').textContent = todayDuty ? 'Plantão previsto' : 'Folga prevista';
-            document.getElementById('dashNext').textContent = formatDateFormatted(next);
+            if (document.getElementById('dashToday')) document.getElementById('dashToday').textContent = todayDuty ? 'Plantão previsto' : 'Folga prevista';
+            if (document.getElementById('dashNext')) document.getElementById('dashNext').textContent = formatDateFormatted(next);
             const prefix = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-`;
             const monthEvents = Object.entries(eventsData).filter(([k,v]) => k.startsWith(prefix) && v && (v.note || (v.swap && v.swap.active) || (v.extra && v.extra.type && v.extra.type !== 'none') || (v.attachments && v.attachments.length)));
             let hours = 0, extraShifts = 0;
             Object.entries(eventsData).filter(([k])=>k.startsWith(prefix)).forEach(([k,v])=>{ if(v.extra?.type==='hours') hours += Number(v.extra.hours)||0; if(v.extra?.type==='shift') extraShifts++; });
             const swaps = countUniqueSwapsInMonth(today.getFullYear(), today.getMonth());
-            document.getElementById('dashRecords').textContent = monthEvents.length;
-            document.getElementById('dashHours').textContent = `${hours} h`;
-            document.getElementById('statsSummary').innerHTML = `<div class="grid grid-cols-2 sm:grid-cols-4 gap-2"><div><b>${hours} h</b><br><span class="text-xs">Horas extras registradas</span></div><div><b>${extraShifts}</b><br><span class="text-xs">Plantões extras</span></div><div><b>${swaps}</b><br><span class="text-xs">Trocas registradas</span></div><div><b>${Object.keys(eventsData).length}</b><br><span class="text-xs">Dias com registros</span></div></div>`;
-            document.getElementById('pinStatus').textContent = amtStorage.getItem('amt_pin_hash') ? 'PIN configurado neste navegador.' : 'Nenhum PIN configurado.';
-            document.getElementById('reminderStatus').textContent = amtStorage.getItem('amt_reminders') ? 'Lembretes ativados neste dispositivo.' : 'Lembretes desativados.';
+            if (document.getElementById('dashRecords')) document.getElementById('dashRecords').textContent = monthEvents.length;
+            if (document.getElementById('dashHours')) document.getElementById('dashHours').textContent = `${hours} h`;
+            if (document.getElementById('statsSummary')) document.getElementById('statsSummary').innerHTML = `<div class="grid grid-cols-2 sm:grid-cols-4 gap-2"><div><b>${hours} h</b><br><span class="text-xs">Horas extras registradas</span></div><div><b>${extraShifts}</b><br><span class="text-xs">Plantões extras</span></div><div><b>${swaps}</b><br><span class="text-xs">Trocas registradas</span></div><div><b>${Object.keys(eventsData).length}</b><br><span class="text-xs">Dias com registros</span></div></div>`;
+            if (document.getElementById('pinStatus')) document.getElementById('pinStatus').textContent = amtStorage.getItem('amt_pin_hash') ? 'PIN configurado neste navegador.' : 'Nenhum PIN configurado.';
+            if (document.getElementById('reminderStatus')) document.getElementById('reminderStatus').textContent = amtStorage.getItem('amt_reminders') ? 'Lembretes ativados neste dispositivo.' : 'Lembretes desativados.';
         }
 
         function searchRecords() {
@@ -1209,7 +1209,7 @@
             amtStorage.setItem('amt_reminders',document.getElementById('reminderHours').value); refreshManagementPanel(); checkReminder(); alert('Lembretes ativados. O aviso depende das permissões e de o navegador/sistema permitir notificações em segundo plano; isso não configura o alarme nativo do celular.');
         }
         function checkReminder() {
-            if (Notification.permission!=='granted' || !amtStorage.getItem('amt_reminders')) return;
+            if (!('Notification' in window) || Notification.permission!=='granted' || !amtStorage.getItem('amt_reminders')) return;
             const hours=Number(amtStorage.getItem('amt_reminders'))||3; const now=new Date(); const target=new Date(now); target.setHours(6,0,0,0); if(target<=now) target.setDate(target.getDate()+1);
             if (isDutyDay(target) && (target-now)<=hours*3600000 && (target-now)>=(hours-1/60)*3600000) { const key='amt_notified_'+formatDateKey(target); if(!amtStorage.getItem(key)){ new Notification('Escala AMT Eusébio',{body:`Seu plantão está previsto para ${formatDateFormatted(target)} às 06:00.`, vibrate:[300,150,300], tag:'amt-plantao'}); amtStorage.setItem(key,'1'); } }
         }
