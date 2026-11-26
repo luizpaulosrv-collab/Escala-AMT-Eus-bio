@@ -1,4 +1,4 @@
-const CACHE_NAME = 'amt-eusebio-v12-bank-holidays-reports';
+const CACHE_NAME = 'amt-eusebio-v12-sem-pin-20261126';
 const APP_SHELL = [
   './',
   './index.html',
@@ -37,7 +37,7 @@ self.addEventListener('fetch', event => {
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
       try {
-        const response = await fetch(request);
+        const response = await fetch(request, {cache: 'no-store'});
         if (response && response.ok) {
           const cache = await caches.open(CACHE_NAME);
           await cache.put('./index.html', response.clone());
@@ -54,7 +54,7 @@ self.addEventListener('fetch', event => {
     const cached = await caches.match(request);
     if (cached) return cached;
     try {
-      const response = await fetch(request);
+      const response = await fetch(request, {cache: 'no-store'});
       if (response && response.ok) {
         const cache = await caches.open(CACHE_NAME);
         await cache.put(request, response.clone());

@@ -189,10 +189,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
           <label class="block text-sm font-bold">Matrícula:
             <input id="agentMatriculaInput" required maxlength="40" class="mt-1 w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-white" placeholder="Digite sua matrícula">
           </label>
-          <label class="block text-sm font-bold">Senha de acesso (opcional):
-            <input id="agentAccessPinInput" type="password" inputmode="numeric" autocomplete="new-password" maxlength="8" pattern="[0-9]{4,8}" class="mt-1 w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-white" placeholder="PIN numérico de 4 a 8 dígitos">
-          </label>
-          <p class="text-xs leading-relaxed text-slate-300">Se desejar proteger o acesso, cadastre um PIN numérico de 4 a 8 dígitos. A escala será configurada depois, em Configurações.</p>
+          <p class="text-xs leading-relaxed text-slate-300">A escala será configurada depois, em Configurações.</p>
           <div class="flex gap-3 pt-2"><button type="button" onclick="cancelAgentRegistration()" class="flex-1 rounded-xl border border-slate-600 py-3 font-bold">Voltar</button><button type="submit" class="flex-1 rounded-xl bg-amber-400 py-3 font-black text-slate-950">Salvar cadastro</button></div>
         </form>
       </div>
@@ -576,7 +573,6 @@ html[data-color-theme="blackMono"] .text-red-500 {
         <div id="savedScaleConfigs" class="hidden" aria-hidden="true"></div>
       </section>
       <div id="settingsPdfMount"></div>
-      <div id="settingsPinMount"></div>
       <div id="settingsBackupMount"></div>
       <section class="rounded-2xl border border-gray-200 dark:border-gray-700 bg-[#F8F5ED] dark:bg-[#211F1B] p-4 space-y-3">
         <h3 class="font-bold text-sm"><i class="fa-solid fa-user-pen text-amber-500 mr-2"></i>Cadastro do servidor(a)</h3>
@@ -714,11 +710,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
 
             </div>
 
-              <div id="pinSettings" class="config-only-tools hidden border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
-                <h4 class="font-semibold text-sm text-gray-800 dark:text-gray-200"><i class="fa-solid fa-lock text-amber-600 mr-1"></i> Proteção por PIN</h4>
-                <p class="text-xs text-gray-500 dark:text-gray-400">O PIN evita acesso casual neste navegador, mas não criptografa o arquivo nem substitui o bloqueio do celular.</p>
-                <div class="flex flex-wrap gap-2"><input id="pinInput" type="password" inputmode="numeric" maxlength="8" placeholder="PIN de 4 a 8 dígitos" class="px-3 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm"><button onclick="setAppPin()" class="px-3 py-2 rounded-lg bg-amber-500 text-black font-bold text-sm">Definir / alterar PIN</button><button onclick="removeAppPin()" class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-sm">Remover PIN</button></div><p id="pinStatus" class="text-xs text-gray-500"></p>
-              </div>
+
             </section>
             <!-- Relatório mensal em PDF -->
             <div id="pdfSettings" class="config-only-tools hidden bg-[#F8F5ED]/90 dark:bg-[#211F1B]/95 p-4 rounded-2xl border border-amber-500/30 shadow-sm space-y-3 mt-4">
@@ -818,7 +810,6 @@ html[data-color-theme="blackMono"] .text-red-500 {
         if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
             window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(err => console.warn('Não foi possível registrar o modo PWA:', err)));
         }
-        let pinUnlocked = !localStorage.getItem('amt_pin_hash');
 
         // Inicializador
         window.onload = function() {
@@ -842,7 +833,6 @@ html[data-color-theme="blackMono"] .text-red-500 {
             setupSettingsScreen();
             renderApp();
             refreshManagementPanel();
-            if (!pinUnlocked) { setTimeout(requestPinUnlock, 250); }
             document.addEventListener('visibilitychange', () => { if (!document.hidden) updateCountdown(); });
             window.addEventListener('focus', updateCountdown);
             setInterval(checkReminder, 60000);
@@ -1831,7 +1821,6 @@ html[data-color-theme="blackMono"] .text-red-500 {
         function setupSettingsScreen() {
             const moves = [
                 ['pdfSettings', 'settingsPdfMount'],
-                ['pinSettings', 'settingsPinMount'],
                 ['backupSettings', 'settingsBackupMount']
             ];
             moves.forEach(([id, mountId]) => {
@@ -1905,7 +1894,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
         }
 
         /* =====================================================================
-           10. FERRAMENTAS: painel, pesquisa, backup, lembretes, PIN e PWA
+           10. FERRAMENTAS: painel, pesquisa, backup, lembretes e PWA
            ===================================================================== */
         function refreshManagementPanel() {
             const today = new Date(); today.setHours(0,0,0,0);
@@ -1923,7 +1912,6 @@ html[data-color-theme="blackMono"] .text-red-500 {
             document.getElementById('dashRecords').textContent = monthEvents.length;
             document.getElementById('dashHours').textContent = `${hours} h`;
             document.getElementById('statsSummary').innerHTML = `<div class="grid grid-cols-2 sm:grid-cols-4 gap-2"><div><b>${hours} h</b><br><span class="text-xs">Horas extras registradas</span></div><div><b>${extraShifts}</b><br><span class="text-xs">Plantões extras</span></div><div><b>${swaps}</b><br><span class="text-xs">Trocas registradas</span></div><div><b>${Object.keys(eventsData).length}</b><br><span class="text-xs">Dias com registros</span></div></div>`;
-            document.getElementById('pinStatus').textContent = localStorage.getItem('amt_pin_hash') ? 'PIN configurado neste navegador.' : 'Nenhum PIN configurado.';
             document.getElementById('reminderStatus').textContent = localStorage.getItem('amt_reminders') ? 'Lembretes ativados neste dispositivo.' : 'Lembretes desativados.';
         }
 
@@ -2019,14 +2007,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
             input.value='';
         };
         async function resetAppData() {
-            const storedPinHash=localStorage.getItem('amt_pin_hash');
-            if(storedPinHash){
-                const enteredPin=prompt('Para resetar o aplicativo e apagar os dados, digite o PIN configurado:');
-                if(enteredPin===null)return;
-                let validPin=false;try{validPin=(await digestPin(enteredPin))===storedPinHash;}catch(_){validPin=false;}
-                if(!validPin){alert('PIN incorreto. O aplicativo não foi resetado e nenhum dado foi apagado.');return;}
-            }
-            const confirmed = confirm('Tem certeza que deseja resetar o aplicativo? Todos os registros, cadastro, configurações e PIN salvos neste dispositivo serão apagados. Esta ação não pode ser desfeita.');
+            const confirmed = confirm('Tem certeza que deseja resetar o aplicativo? Todos os registros, cadastro, configurações salvos neste dispositivo serão apagados. Esta ação não pode ser desfeita.');
             if (!confirmed) return;
             const secondConfirm = confirm('Confirma a exclusão de todos os dados da Escala AMT e o retorno à tela inicial para um novo cadastro?');
             if (!secondConfirm) return;
@@ -2051,10 +2032,6 @@ html[data-color-theme="blackMono"] .text-red-500 {
             const hours=Number(localStorage.getItem('amt_reminders'))||3; const now=new Date(); const target=new Date(now); target.setHours(6,0,0,0); if(target<=now) target.setDate(target.getDate()+1);
             if (isDutyDay(target) && (target-now)<=hours*3600000 && (target-now)>=(hours-1/60)*3600000) { const key='amt_notified_'+formatDateKey(target); if(!localStorage.getItem(key)){ new Notification('Escala AMT Eusébio',{body:`Seu plantão está previsto para ${formatDateFormatted(target)} às 06:00.`, vibrate:[300,150,300], tag:'amt-plantao'}); localStorage.setItem(key,'1'); } }
         }
-        async function digestPin(pin) { const data=new TextEncoder().encode(pin); const hash=await crypto.subtle.digest('SHA-256',data); return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join(''); }
-        async function setAppPin() { const pin=document.getElementById('pinInput').value; if(!/^\d{4,8}$/.test(pin)){ alert('Use um PIN numérico de 4 a 8 dígitos.'); return; } if(!crypto?.subtle){ alert('Este navegador não oferece criptografia segura para configurar o PIN.'); return; } localStorage.setItem('amt_pin_hash',await digestPin(pin)); document.getElementById('pinInput').value=''; pinUnlocked=true; refreshManagementPanel(); alert('PIN configurado neste navegador.'); }
-        async function requestPinUnlock() { const stored=localStorage.getItem('amt_pin_hash'); if(!stored) return; for(let tries=0;tries<3;tries++){ const pin=prompt('Digite seu PIN para acessar a Escala AMT Eusébio:'); if(pin===null) { document.body.innerHTML='<main style="font-family:Arial;padding:32px;text-align:center"><h2>Aplicativo bloqueado</h2><p>Recarregue a página para tentar novamente.</p></main>'; return; } if(await digestPin(pin)===stored){ pinUnlocked=true; return; } alert('PIN incorreto.'); } document.body.innerHTML='<main style="font-family:Arial;padding:32px;text-align:center"><h2>Aplicativo bloqueado</h2><p>Recarregue a página para tentar novamente.</p></main>'; }
-        async function removeAppPin() { if(!localStorage.getItem('amt_pin_hash')) { alert('Não há PIN configurado.'); return; } const pin=prompt('Digite o PIN atual para removê-lo:'); if(pin && await digestPin(pin)===localStorage.getItem('amt_pin_hash')) { localStorage.removeItem('amt_pin_hash'); pinUnlocked=true; refreshManagementPanel(); alert('PIN removido.'); } else alert('PIN incorreto.'); }
         /* ==========================================================================
            10. UTILITÁRIOS DE FORMATO DE DATA
            ========================================================================== */
@@ -2087,7 +2064,6 @@ html[data-color-theme="blackMono"] .text-red-500 {
    const saveBtn=document.querySelector('#agentProfileForm button[type="submit"]');
    if(saveBtn)saveBtn.textContent=editingProfile?'Salvar alterações':'Salvar cadastro';
    if(p){document.getElementById('agentNameInput').value=p.name||'';document.getElementById('agentMatriculaInput').value=p.matricula||'';}
-   const pinField=document.getElementById('agentAccessPinInput');if(pinField)pinField.value='';
    document.getElementById('agentRegistration').classList.remove('hidden');
  };
  window.cancelAgentRegistration=function(){document.getElementById('agentRegistration').classList.add('hidden');if(editingProfile){const settings=document.getElementById('settingsScreen');if(settings)settings.classList.remove('hidden');}else if(!localStorage.getItem(PROFILE_KEY)){document.getElementById('welcomeScreen').classList.remove('hidden');}editingProfile=false;};
@@ -2102,16 +2078,10 @@ html[data-color-theme="blackMono"] .text-red-500 {
    e.preventDefault();
    const nameInput=document.getElementById('agentNameInput');
    const matriculaInput=document.getElementById('agentMatriculaInput');
-   const pinInput=document.getElementById('agentAccessPinInput');
-   const pin=(pinInput?.value||'').trim();
    const p={name:(nameInput?.value||'').trim(),matricula:(matriculaInput?.value||'').trim()};
    if(!p.name||!p.matricula){alert('Preencha o nome do(a) servidor(a) e a matrícula para continuar.');return;}
-   if(pin&&!/^\d{4,8}$/.test(pin)){alert('A senha de acesso deve ter de 4 a 8 dígitos numéricos.');return;}
-   if(pin&&!crypto?.subtle){alert('Este navegador não permite configurar o PIN com segurança. A senha não foi alterada.');return;}
    try {
      localStorage.setItem(PROFILE_KEY,JSON.stringify(p));
-     if(pin){localStorage.setItem('amt_pin_hash',await digestPin(pin));pinUnlocked=true;}
-     if(pinInput)pinInput.value='';
      applyProfile(p);
      // Fechar primeiro as telas de entrada para garantir a transição mesmo se
      // algum cálculo secundário do calendário falhar.
