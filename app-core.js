@@ -656,6 +656,14 @@
             const statusBadge = document.getElementById('statusBadge');
             const statusText = document.getElementById('statusText');
             const countdownTitle = document.getElementById('countdownTitle');
+            let prefs={};try{prefs=JSON.parse(amtStorage.getItem('amt_agent_profile_v35')||'{}')||{};}catch(_){}
+            const mode=['countdown','date','none'].includes(prefs.headerShiftMode)?prefs.headerShiftMode:'countdown';
+            const showStatus=prefs.headerShowStatus!==false;
+            document.getElementById('headerShiftPanel').hidden=!showStatus&&mode==='none';
+            statusBadge.hidden=!showStatus;countdownTitle.hidden=mode==='none';
+            document.getElementById('headerCountdownDigits').hidden=mode!=='countdown';
+            const dateDisplay=document.getElementById('headerNextDate');dateDisplay.hidden=mode!=='date';
+            if(!showStatus&&mode==='none')return;
             const countdownFields = ['cdDays', 'cdHours', 'cdMins', 'cdSecs'];
             const shiftHours = 24;
             let activeShift = null;
@@ -703,6 +711,10 @@
                 countdownTitle.innerText = nextShift && nextShift.reason === 'extra' ? 'Plantão Extra em' : nextShift && nextShift.reason === 'swap' ? 'Troca de Plantão em' : 'Próximo Plantão';
             }
 
+            if(mode==='date'){
+                if(activeShift){for(let offset=0;offset<=730;offset++){const d=new Date(today);d.setDate(d.getDate()+offset);const start=new Date(d.getFullYear(),d.getMonth(),d.getDate(),6);if(start>now&&getWorkReason(d)){nextShift={startTime:start};break;}}}
+                countdownTitle.innerText='Próximo Plantão';dateDisplay.textContent=nextShift?nextShift.startTime.toLocaleDateString('pt-BR'):'Nenhum plantão previsto';return;
+            }
             if (!targetTime) {
                 countdownFields.forEach(id => { const el = document.getElementById(id); if (el) el.innerText = '00'; });
                 statusText.innerText = 'SEM PLANTÃO PREVISTO';
