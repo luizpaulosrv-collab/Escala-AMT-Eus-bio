@@ -89,9 +89,22 @@
             background: rgba(155,155,155,0.5);
             border-radius: 4px;
         }
-        .welcome-screen { background: linear-gradient(rgba(10,18,35,.58),rgba(10,18,35,.70)), url('./fundo-amt.jpeg') center/cover no-repeat; }
-        .welcome-screen::before { content:""; position:absolute; inset:0; background:url('./fundo-amt.jpeg') center/cover no-repeat; opacity:.20; pointer-events:none; }
-        .welcome-screen > * { position:relative; z-index:1; }
+        #welcomeScreen.welcome-screen { background: url('./welcome-amt.jpg') center/cover no-repeat; display:flex; flex-direction:column; justify-content:flex-start; align-items:center; padding: max(16px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); overflow-y:auto; }
+        #welcomeScreen.hidden { display:none; }
+        .welcome-glass { margin:auto 0; flex-shrink:0; width:min(100%, 480px); padding:clamp(20px,5vw,30px); text-align:center; color:white; border-radius:30px; border:1px solid rgba(255,255,255,.55); background:rgba(7,15,26,.55); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); box-shadow:inset 0 1px 3px rgba(255,255,255,.25),0 12px 35px rgba(0,0,0,.18); }
+        .welcome-glass h1 { font-size:clamp(20px,5.6vw,32px); font-weight:800; line-height:1.15; letter-spacing:-.045em; margin:0; }
+        .welcome-glass h1 span { color:#ffcc00; }
+        .welcome-swoosh { display:block; width:100%; height:16px; margin:8px auto 10px; }
+        .welcome-calendar { display:block; width:56px; height:56px; margin:0 auto 12px; color:#ffcc00; }
+        .welcome-description { font-size:clamp(13px,3.6vw,16px); line-height:1.5; font-weight:400; color:#f1f5f9; margin:0; }
+        .welcome-divider { height:2px; width:68%; margin:18px auto; background:linear-gradient(90deg,transparent,#ffcc00,transparent); }
+        #welcomeGreeting { font-size:clamp(17px,4.7vw,24px); font-weight:700; line-height:1.25; margin:0 0 16px; }
+        #startRegistrationBtn { display:flex; align-items:center; justify-content:center; gap:12px; width:100%; min-height:52px; border:0; border-radius:999px; background:#ffcc00; color:#101010; font-size:clamp(16px,4.6vw,22px); font-weight:800; padding:12px; cursor:pointer; }
+        #startRegistrationBtn svg { width:28px; height:28px; flex:none; }
+        #startRegistrationBtn:focus-visible { outline:3px solid white; outline-offset:3px; }
+        .welcome-credit { margin:16px 0 0; font-size:clamp(12px,3.4vw,15px); font-weight:600; }
+        .welcome-copyright { margin:5px 0 0; font-size:clamp(11px,3vw,13px); color:#e2e8f0; }
+        @supports not (backdrop-filter:blur(3px)) { .welcome-glass { background:rgba(7,15,26,.72); } }
         .pulse-animation {
             animation: pulse-glow 2s infinite;
         }
@@ -169,14 +182,16 @@ html[data-color-theme="blackMono"] .text-red-500 {
 
 
     <section id="welcomeScreen" class="welcome-screen fixed inset-0 z-[100] flex items-center justify-center p-5 overflow-y-auto text-white">
-      <div class="w-full max-w-md rounded-3xl border border-white/25 bg-slate-950/55 backdrop-blur-sm shadow-2xl p-6 sm:p-8 text-center">
-        <h1 class="mt-3 text-4xl sm:text-5xl font-black tracking-tight">ESCALA AMT</h1>
-        <p class="mt-2 text-sm font-semibold text-amber-200">Desenvolvido por Agente Saraiva</p>
-        <p class="mt-1 text-sm font-semibold text-amber-200">Versão 1.0</p>
-        <div id="welcomeGreeting" class="mt-8 text-2xl font-extrabold">Bem vindo(a), Servidor(a)!</div>
-        <p class="mt-3 text-sm leading-relaxed text-white/90">Mais organização, controle e praticidade na gestão das escalas.</p>
-        <button id="startRegistrationBtn" onclick="showAgentRegistration()" class="mt-7 w-full rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-lg py-4 shadow-lg">Iniciar Cadastro</button>
-        <p class="mt-4 text-xs text-white/75">Seus dados pessoais ficam salvos localmente neste dispositivo.</p>
+      <div class="welcome-glass">
+        <h1>ESCALA AMT <span>EUSÉBIO</span></h1>
+        <svg class="welcome-swoosh" viewBox="0 0 320 16" preserveAspectRatio="none" aria-hidden="true"><path d="M0 16 Q160 -15 320 16 Q160 -3 0 16" fill="#ffcc00"/></svg>
+        <svg class="welcome-calendar" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><rect x="5" y="9" width="38" height="34" rx="6"/><path d="M5 20h38M15 5v9M33 5v9"/><g fill="currentColor" stroke="none"><circle cx="13" cy="27" r="2.4"/><circle cx="24" cy="27" r="2.4"/><circle cx="35" cy="27" r="2.4"/><circle cx="13" cy="35" r="2.4"/><circle cx="24" cy="35" r="2.4"/><circle cx="35" cy="35" r="2.4"/></g></svg>
+        <p class="welcome-description">Mais organização, controle e praticidade na gestão das escalas.</p>
+        <div class="welcome-divider" aria-hidden="true"></div>
+        <div id="welcomeGreeting">Bem-vindo(a), servidor(a)!</div>
+        <button id="startRegistrationBtn" type="button" onclick="showAgentRegistration()"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="9" r="5"/><path d="M2 28v-3a9 9 0 0 1 18 0v3M25 9v10M20 14h10"/></svg><span aria-hidden="true" style="height:24px;width:1px;background:currentColor"></span>Iniciar Cadastro</button>
+        <p class="welcome-credit">Desenvolvido por Agente Saraiva</p>
+        <p class="welcome-copyright">© 2026 · Todos os direitos reservados.</p>
       </div>
     </section>
     <section id="agentRegistration" class="fixed inset-0 z-[101] hidden overflow-y-auto bg-slate-950/90 p-4 sm:p-6 text-white">
@@ -189,7 +204,6 @@ html[data-color-theme="blackMono"] .text-red-500 {
           <label class="block text-sm font-bold">Matrícula:
             <input id="agentMatriculaInput" required maxlength="40" class="mt-1 w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-white" placeholder="Digite sua matrícula">
           </label>
-          <p class="text-xs">A proteção opcional por PIN pode ser configurada depois, em Configurações.</p>
           <div class="flex gap-3 pt-2"><button type="button" onclick="cancelAgentRegistration()" class="flex-1 rounded-xl border border-slate-600 py-3 font-bold">Voltar</button><button type="submit" class="flex-1 rounded-xl bg-amber-400 py-3 font-black text-slate-950">Salvar cadastro</button></div>
         </form>
       </div>
@@ -575,7 +589,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
       <div id="settingsPdfMount"></div>
       <div id="settingsPinMount"></div>
       <div id="settingsBackupMount"></div>
-      <section class="rounded-2xl border border-gray-200 dark:border-gray-700 bg-[#F8F5ED] dark:bg-[#211F1B] p-4 space-y-3"><h3 class="font-bold text-sm">Informações legais</h3><div class="flex flex-wrap gap-4 text-sm"><a class="underline" href="./privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a><a class="underline" href="./termos.html" target="_blank" rel="noopener">Termos de Serviço</a></div></section>
+      
       <section class="rounded-2xl border border-gray-200 dark:border-gray-700 bg-[#F8F5ED] dark:bg-[#211F1B] p-4 space-y-3">
         <h3 class="font-bold text-sm"><i class="fa-solid fa-user-pen text-amber-500 mr-2"></i>Cadastro do servidor(a)</h3>
         <p class="text-sm text-gray-600 dark:text-gray-300">Altere seu nome ou matrícula sem apagar seus registros e trocas de plantão.</p>
@@ -715,7 +729,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
               <div id="pinSettings" class="config-only-tools hidden border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
                 <h4 class="font-semibold text-sm text-gray-800 dark:text-gray-200"><i class="fa-solid fa-lock text-amber-600 mr-1"></i> Proteção por PIN</h4>
                 <p class="text-xs text-gray-500 dark:text-gray-400">O PIN evita acesso casual neste navegador, mas não criptografa o arquivo nem substitui o bloqueio do celular.</p>
-                <div class="flex flex-wrap gap-2"><button onclick="setAppPin()" class="px-3 py-2 rounded-lg border font-bold">Definir / alterar PIN</button><button onclick="removeAppPin()" class="px-3 py-2 rounded-lg border">Remover PIN</button></div><p id="pinStatus" class="text-xs"></p>
+                <button id="amtPinCreate" onclick="setAppPin()" class="px-3 py-2 rounded-lg border font-bold">Cadastrar PIN</button><div id="amtPinActions" hidden><button onclick="amtPinEdit('pin')" class="px-3 py-2 rounded-lg border">Alterar PIN</button> <button onclick="amtPinEdit('question')" class="px-3 py-2 rounded-lg border">Alterar pergunta e resposta secreta</button> <button onclick="amtPinEdit('rules')" class="px-3 py-2 rounded-lg border">Alterar situações protegidas</button> <button onclick="removeAppPin()" class="px-3 py-2 rounded-lg border">Remover PIN</button></div><p id="pinStatus" class="text-xs"></p>
               </div>
             </section>
             <!-- Relatório mensal em PDF -->
@@ -793,6 +807,6 @@ html[data-color-theme="blackMono"] .text-red-500 {
 <script src="storage.js"></script><script src="boot.js"></script>
 
 
-<footer class="text-center text-xs p-4"><a href="./privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a> · <a href="./termos.html" target="_blank" rel="noopener">Termos de Serviço</a></footer>
+
 </body>
 </html>

@@ -1012,6 +1012,7 @@
         }
 
         async function clearDayData() {
+ if(!await amtPinGate('calendar'))return;
             if(eventsData[selectedDateStr]&&!await amtPrevent())return;
             if (eventsData[selectedDateStr]) {
                 const linkedSwapDate = eventsData[selectedDateStr].swap?.otherDate || '';
@@ -1178,7 +1179,7 @@
         }
         async function getPaystubRecords(){return await window.amtPDFs();}
         async function resetAppData() {
-            if (amtPinConfig() && !await amtPinAuthorize()) return;
+            if (!await amtPinGate('reset')) return;
             const confirmed = confirm('Tem certeza que deseja resetar o aplicativo? Todos os registros, cadastro, configurações e PIN salvos neste dispositivo serão apagados. Esta ação não pode ser desfeita.');
             if (!confirmed) return;
             const secondConfirm = confirm('Confirma a exclusão de todos os dados da Escala AMT e o retorno à tela inicial para um novo cadastro?');
