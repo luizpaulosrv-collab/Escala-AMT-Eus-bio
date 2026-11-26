@@ -9,7 +9,6 @@
    const saveBtn=document.querySelector('#agentProfileForm button[type="submit"]');
    if(saveBtn)saveBtn.textContent=editingProfile?'Salvar alterações':'Salvar cadastro';
    if(p){document.getElementById('agentNameInput').value=p.name||'';document.getElementById('agentMatriculaInput').value=p.matricula||'';}
-   const pinField=document.getElementById('agentAccessPinInput');if(pinField)pinField.value='';
    document.getElementById('agentRegistration').classList.remove('hidden');
  };
  window.cancelAgentRegistration=function(){document.getElementById('agentRegistration').classList.add('hidden');if(editingProfile){const settings=document.getElementById('settingsScreen');if(settings)settings.classList.remove('hidden');}else if(!amtStorage.getItem(PROFILE_KEY)){document.getElementById('welcomeScreen').classList.remove('hidden');}editingProfile=false;};
@@ -24,16 +23,10 @@
    e.preventDefault();
    const nameInput=document.getElementById('agentNameInput');
    const matriculaInput=document.getElementById('agentMatriculaInput');
-   const pinInput=document.getElementById('agentAccessPinInput');
-   const pin=(pinInput?.value||'').trim();
    const p={name:(nameInput?.value||'').trim(),matricula:(matriculaInput?.value||'').trim()};
    if(!p.name||!p.matricula){alert('Preencha o nome do(a) servidor(a) e a matrícula para continuar.');return;}
-   if(pin&&!/^\d{4,8}$/.test(pin)){alert('A senha de acesso deve ter de 4 a 8 dígitos numéricos.');return;}
-   if(pin&&!crypto?.subtle){alert('Este navegador não permite configurar o PIN com segurança. A senha não foi alterada.');return;}
    try {
      amtStorage.setItem(PROFILE_KEY,JSON.stringify(p));
-     if(pin){amtStorage.setItem('amt_pin_hash',await digestPin(pin));pinUnlocked=true;}
-     if(pinInput)pinInput.value='';
      applyProfile(p);
      // Fechar primeiro as telas de entrada para garantir a transição mesmo se
      // algum cálculo secundário do calendário falhar.

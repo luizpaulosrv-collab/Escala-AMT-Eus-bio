@@ -21,7 +21,7 @@
         let reminderTimer = null;
 
         // PWA: registra o service worker quando servido por HTTPS ou localhost.
-        let pinUnlocked = !amtStorage.getItem('amt_pin_hash');
+        let pinUnlocked = true;
 
         // Inicializador
         window.amtStart = function() {
@@ -45,7 +45,7 @@
             setupSettingsScreen();
             renderApp();
             refreshManagementPanel();
-            if (!pinUnlocked) { setTimeout(requestPinUnlock, 250); }
+            
             document.addEventListener('visibilitychange', () => { if (!document.hidden) updateCountdown(); });
             window.addEventListener('focus', updateCountdown);
             setInterval(checkReminder, 60000);
@@ -1127,7 +1127,7 @@
             if (document.getElementById('dashRecords')) document.getElementById('dashRecords').textContent = monthEvents.length;
             if (document.getElementById('dashHours')) document.getElementById('dashHours').textContent = `${hours} h`;
             if (document.getElementById('statsSummary')) document.getElementById('statsSummary').innerHTML = `<div class="grid grid-cols-2 sm:grid-cols-4 gap-2"><div><b>${hours} h</b><br><span class="text-xs">Horas extras registradas</span></div><div><b>${extraShifts}</b><br><span class="text-xs">Plantões extras</span></div><div><b>${swaps}</b><br><span class="text-xs">Trocas registradas</span></div><div><b>${Object.keys(eventsData).length}</b><br><span class="text-xs">Dias com registros</span></div></div>`;
-            if (document.getElementById('pinStatus')) document.getElementById('pinStatus').textContent = amtStorage.getItem('amt_pin_hash') ? 'PIN configurado neste navegador.' : 'Nenhum PIN configurado.';
+            if (document.getElementById('pinStatus')) document.getElementById('pinStatus').textContent = amtPinConfig() ? 'PIN configurado neste navegador.' : 'Nenhum PIN configurado.';
             if (document.getElementById('reminderStatus')) document.getElementById('reminderStatus').textContent = amtStorage.getItem('amt_reminders') ? 'Lembretes ativados neste dispositivo.' : 'Lembretes desativados.';
         }
 
@@ -1178,13 +1178,7 @@
         }
         async function getPaystubRecords(){return await window.amtPDFs();}
         async function resetAppData() {
-            const storedPinHash=amtStorage.getItem('amt_pin_hash');
-            if(storedPinHash){
-                const enteredPin=prompt('Para resetar o aplicativo e apagar os dados, digite o PIN configurado:');
-                if(enteredPin===null)return;
-                let validPin=false;try{validPin=(await digestPin(enteredPin))===storedPinHash;}catch(_){validPin=false;}
-                if(!validPin){alert('PIN incorreto. O aplicativo não foi resetado e nenhum dado foi apagado.');return;}
-            }
+            if (amtPinConfig() && !await amtPinAuthorize()) return;
             const confirmed = confirm('Tem certeza que deseja resetar o aplicativo? Todos os registros, cadastro, configurações e PIN salvos neste dispositivo serão apagados. Esta ação não pode ser desfeita.');
             if (!confirmed) return;
             const secondConfirm = confirm('Confirma a exclusão de todos os dados da Escala AMT e o retorno à tela inicial para um novo cadastro?');
@@ -1213,10 +1207,6 @@
             const hours=Number(amtStorage.getItem('amt_reminders'))||3; const now=new Date(); const target=new Date(now); target.setHours(6,0,0,0); if(target<=now) target.setDate(target.getDate()+1);
             if (isDutyDay(target) && (target-now)<=hours*3600000 && (target-now)>=(hours-1/60)*3600000) { const key='amt_notified_'+formatDateKey(target); if(!amtStorage.getItem(key)){ new Notification('Escala AMT Eusébio',{body:`Seu plantão está previsto para ${formatDateFormatted(target)} às 06:00.`, vibrate:[300,150,300], tag:'amt-plantao'}); amtStorage.setItem(key,'1'); } }
         }
-        async function digestPin(pin) { const data=new TextEncoder().encode(pin); const hash=await crypto.subtle.digest('SHA-256',data); return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join(''); }
-        async function setAppPin() { const pin=document.getElementById('pinInput').value; if(!/^\d{4,8}$/.test(pin)){ alert('Use um PIN numérico de 4 a 8 dígitos.'); return; } if(!crypto?.subtle){ alert('Este navegador não oferece criptografia segura para configurar o PIN.'); return; } amtStorage.setItem('amt_pin_hash',await digestPin(pin)); document.getElementById('pinInput').value=''; pinUnlocked=true; refreshManagementPanel(); alert('PIN configurado neste navegador.'); }
-        async function requestPinUnlock() { const stored=amtStorage.getItem('amt_pin_hash'); if(!stored) return; for(let tries=0;tries<3;tries++){ const pin=prompt('Digite seu PIN para acessar a Escala AMT Eusébio:'); if(pin===null) { document.body.innerHTML='<main style="font-family:Arial;padding:32px;text-align:center"><h2>Aplicativo bloqueado</h2><p>Recarregue a página para tentar novamente.</p></main>'; return; } if(await digestPin(pin)===stored){ pinUnlocked=true; return; } alert('PIN incorreto.'); } document.body.innerHTML='<main style="font-family:Arial;padding:32px;text-align:center"><h2>Aplicativo bloqueado</h2><p>Recarregue a página para tentar novamente.</p></main>'; }
-        async function removeAppPin() { if(!amtStorage.getItem('amt_pin_hash')) { alert('Não há PIN configurado.'); return; } const pin=prompt('Digite o PIN atual para removê-lo:'); if(pin && await digestPin(pin)===amtStorage.getItem('amt_pin_hash')) { amtStorage.removeItem('amt_pin_hash'); pinUnlocked=true; refreshManagementPanel(); alert('PIN removido.'); } else alert('PIN incorreto.'); }
         /* ==========================================================================
            10. UTILITÁRIOS DE FORMATO DE DATA
            ========================================================================== */
