@@ -203,8 +203,8 @@
         function renderSavedScaleConfigs(){const el=document.getElementById('savedScaleConfigs');if(el){el.innerHTML='';el.classList.add('hidden');}updateProfileScaleDisplay();}
         function updateProfileScaleDisplay(){
             const display=document.getElementById('profileScaleDisplay');if(!display)return;let a=[];try{a=JSON.parse(amtStorage.getItem('amt_month_scales')||'[]')}catch(_){}
-            if(!a.length){display.textContent='Escala: não configurada';return;}
-            const scale=a[a.length-1].scale;display.textContent='Escala: '+(scale==='administrativo'?'Administrativo':scale+'h');
+            if(!a.length){display.textContent='Escala: não configurada';window.refreshAgentHeader?.();return;}
+            const scale=a[a.length-1].scale;display.textContent='Escala: '+(scale==='administrativo'?'Administrativo':scale+'h');window.refreshAgentHeader?.();
         }
         function clearSpecificScaleMonth(){
             const month=document.getElementById('clearScaleMonth').value;if(!month){alert('Selecione o mês cuja escala deseja limpar.');return;}
