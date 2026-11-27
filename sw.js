@@ -1,7 +1,8 @@
-const CACHE_NAME = 'amt-eusebio-v12-bank-holidays-reports-restore-r1-offline-t2';
+const CACHE_NAME = 'amt-eusebio-v12-bank-holidays-reports-restore-r1-offline-t3';
 const TAILWIND_URL = 'https://cdn.tailwindcss.com/';
 const FA_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/';
 const FA_ASSETS = ['css/all.min.css', 'webfonts/fa-solid-900.woff2', 'webfonts/fa-regular-400.woff2', 'webfonts/fa-brands-400.woff2', 'webfonts/fa-v4compatibility.woff2'].map(path => FA_BASE + path);
+const FONT_CSS = 'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap';
 const APP_SHELL = [
   './',
   './index.html',
@@ -29,6 +30,18 @@ self.addEventListener('install', event => {
       if (!response.ok) throw new Error('Font Awesome unavailable: ' + url);
       await cache.put(url, response);
     }));
+    // Cache the original Google Fonts stylesheet for this browser and its font files.
+    const fontCSS = await fetch(FONT_CSS, {mode: 'cors', cache: 'reload'});
+    if (!fontCSS.ok) throw new Error('Google Fonts stylesheet unavailable');
+    const css = await fontCSS.clone().text();
+    const fontURLs = [...new Set(Array.from(css.matchAll(/url\(\s*['"]?(https:\/\/fonts\.gstatic\.com\/[^)'"\s]+)['"]?\s*\)/g), m => m[1]))];
+    if (!fontURLs.length) throw new Error('Google Fonts stylesheet contains no font URLs');
+    await Promise.all(fontURLs.map(async url => {
+      const response = await fetch(url, {mode: 'cors', cache: 'reload'});
+      if (!response.ok) throw new Error('Google font unavailable: ' + url);
+      await cache.put(url, response);
+    }));
+    await cache.put(FONT_CSS, fontCSS);
     await self.skipWaiting();
   })());
 });
@@ -57,6 +70,17 @@ self.addEventListener('fetch', event => {
     return;
   }
   if (url.href.startsWith(FA_BASE)) {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const cached = await cache.match(request);
+      if (cached) return cached;
+      const response = await fetch(request);
+      if (response.ok || response.type === 'opaque') await cache.put(request, response.clone());
+      return response;
+    })());
+    return;
+  }
+  if (url.href === FONT_CSS || url.origin === 'https://fonts.gstatic.com') {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
       const cached = await cache.match(request);
