@@ -525,7 +525,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
               <div id="backupSettings" class="config-only-tools hidden border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
                 <h4 class="font-semibold text-sm text-gray-800 dark:text-gray-200"><i class="fa-solid fa-database text-amber-600 mr-1"></i> Backup e restauração</h4>
                 <p class="text-xs text-gray-500 dark:text-gray-400">Exporte um único arquivo ZIP com escalas, configurações, banco de horas, pagamentos, temas e todos os contracheques em PDF. Guarde-o em local seguro; a restauração recupera esses dados neste dispositivo.</p>
-                <div class="flex flex-wrap gap-2"><button onclick="exportBackup()" class="px-3 py-2 rounded-lg bg-amber-500 text-black font-bold text-sm"><i class="fa-solid fa-download mr-1"></i> Exportar backup</button><span class="text-xs text-gray-500">Restauração corrigida R1 | Offline T5</span><label class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer text-sm font-semibold"><i class="fa-solid fa-upload mr-1"></i> Restaurar backup<input id="backupFile" type="file" accept=".zip,application/zip,application/x-zip-compressed,application/json,.json" onchange="importBackup(event)" class="hidden"></label></div>
+                <div class="flex flex-wrap gap-2"><button onclick="exportBackup()" class="px-3 py-2 rounded-lg bg-amber-500 text-black font-bold text-sm"><i class="fa-solid fa-download mr-1"></i> Exportar backup</button><span class="text-xs text-gray-500">Restauração corrigida R1 | Offline A5</span><div class="w-full space-y-2 text-xs"><button type="button" id="amtOfflineCheck" class="px-3 py-2 rounded-lg border border-gray-400">Verificar recursos offline</button> <button type="button" id="amtOfflineRepair" class="px-3 py-2 rounded-lg border border-gray-400">Recuperar recursos</button> <button type="button" id="amtOfflinePersist" class="px-3 py-2 rounded-lg border border-gray-400">Solicitar armazenamento persistente</button><p id="amtOfflineStatus" role="status" aria-live="polite"></p></div><label class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer text-sm font-semibold"><i class="fa-solid fa-upload mr-1"></i> Restaurar backup<input id="backupFile" type="file" accept=".zip,application/zip,application/x-zip-compressed,application/json,.json" onchange="importBackup(event)" class="hidden"></label></div>
               </div>
 
         </section>
@@ -816,7 +816,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
 
         // PWA: registra o service worker quando servido por HTTPS ou localhost.
         if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
-            window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(err => console.warn('Não foi possível registrar o modo PWA:', err)));
+            window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js', {updateViaCache: 'none'}).then(reg => { reg.update().catch(() => {}); }).catch(err => console.warn('Não foi possível registrar o modo PWA:', err)));
         }
         let pinUnlocked = !localStorage.getItem('amt_pin_hash');
 
@@ -2314,5 +2314,22 @@ html[data-color-theme="blackMono"] .text-red-500 {
 })();
 </script>
 
+<script>
+(function(){
+ const status = document.getElementById('amtOfflineStatus');
+ function check(repair){
+  const worker = navigator.serviceWorker && navigator.serviceWorker.controller;
+  if(!worker){status.textContent='Service Worker ainda não ativo. Reabra o aplicativo.';return;}
+  const channel = new MessageChannel();
+  status.textContent='Verificando recursos…';
+  const timer = setTimeout(()=>{channel.port1.close();status.textContent='Sem resposta. Confira a versão e tente novamente.';},30000);
+  channel.port1.onmessage = e=>{clearTimeout(timer);channel.port1.close();const r=e.data;if(r.error || r.version!=='A5'){status.textContent='Diagnóstico indisponível nesta versão.';return;}status.textContent=r.missing.length ? 'Recursos ausentes: '+r.missing.join(', ') : r.total+' recursos presentes no cache. Confirme com um teste em modo avião.';};
+  worker.postMessage({type:'AMT_OFFLINE_CHECK',repair},[channel.port2]);
+ }
+ document.getElementById('amtOfflineCheck').onclick=()=>check(false);
+ document.getElementById('amtOfflineRepair').onclick=()=>check(true);
+ document.getElementById('amtOfflinePersist').onclick=async()=>{try{if(!navigator.storage || !navigator.storage.persist){status.textContent='Persistência não suportada.';return;}const granted=await navigator.storage.persist();status.textContent=granted?'Persistência concedida pelo navegador. Mantenha backups.':'Persistência não concedida pelo navegador.';}catch(e){status.textContent='Não foi possível solicitar persistência.';}};
+})();
+</script>
 </body>
 </html>

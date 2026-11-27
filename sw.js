@@ -1,4 +1,5 @@
-const CACHE_NAME = 'amt-eusebio-v12-bank-holidays-reports-restore-r1-offline-t5';
+const CACHE_NAME = 'amt-eusebio-v12-bank-holidays-reports-restore-r1-offline-a5';
+const PREVIOUS_CACHE = 'amt-eusebio-v12-bank-holidays-reports-restore-r1-offline-t5';
 const PDF_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
 const TAILWIND_URL = 'https://cdn.tailwindcss.com/';
 const FA_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/';
@@ -21,7 +22,9 @@ self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     // Each path is relative to this service worker, including GitHub Pages project sites.
-    await cache.addAll(APP_SHELL);
+    await cache.addAll(APP_SHELL.map(path => new Request(new URL(path, self.registration.scope), {cache: 'reload'})));
+    const html = await cache.match('./index.html');
+    if (!html || !(await html.text()).includes('Restauração corrigida R1 | Offline A5')) throw new Error('Versão HTML incompatível');
     // Preserve the original CDN script, including its runtime configuration.
     const request = new Request(TAILWIND_URL, {mode: 'no-cors', cache: 'reload'});
     const response = await fetch(request);
@@ -48,6 +51,8 @@ self.addEventListener('install', event => {
     const pdfResponse = await fetch(pdfRequest);
     if (!pdfResponse.ok && pdfResponse.type !== 'opaque') throw new Error('jsPDF unavailable');
     await cache.put(PDF_URL, pdfResponse);
+    const report = await inspectOffline(false);
+    if (report.missing.length) throw new Error("Cache incompleto: " + report.missing.join(", "));
     await self.skipWaiting();
   })());
 });
@@ -55,7 +60,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(key => key.startsWith('amt-eusebio-') && key !== CACHE_NAME).map(key => caches.delete(key)));
+    await Promise.all(keys.filter(key => key.startsWith('amt-eusebio-') && key !== CACHE_NAME && key !== PREVIOUS_CACHE && !key.endsWith('-offline-a1')).map(key => caches.delete(key)));
     await self.clients.claim();
   })());
 });
@@ -97,28 +102,29 @@ self.addEventListener('fetch', event => {
     })());
     return;
   }
-  if (url.origin !== self.location.origin) return;
+  if (url.origin !== self.location.origin || !url.href.startsWith(self.registration.scope)) return;
 
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const cached = await cache.match('./index.html');
+      if (cached) return cached;
+      // Recover only the matching release, never mix a new HTML with an old worker.
       try {
-        const response = await fetch(request);
-        if (!response.ok) throw new Error('Navigation unavailable');
-        if (response && response.ok) {
-          const cache = await caches.open(CACHE_NAME);
-          await cache.put('./index.html', response.clone());
-        }
+        const response = await fetch(new Request(new URL('./index.html', self.registration.scope), {cache: 'reload'}));
+        if (!response.ok || !(await response.clone().text()).includes('Restauração corrigida R1 | Offline A5')) throw new Error('Versão incompatível');
+        await cache.put('./index.html', response.clone());
         return response;
       } catch (_) {
-        const cache = await caches.open(CACHE_NAME);
-        return (await cache.match(request)) || (await cache.match('./index.html')) || new Response('Aplicativo indisponível offline.', {status: 503, headers: {'Content-Type': 'text/plain; charset=utf-8'}});
+        return new Response('Aplicativo indisponível. Reconecte à internet e reabra para atualizar.', {status: 503, headers: {'Content-Type': 'text/plain; charset=utf-8'}});
       }
     })());
     return;
   }
 
   event.respondWith((async () => {
-    const cached = await caches.match(request);
+    const cache = await caches.open(CACHE_NAME);
+    const cached = await cache.match(request);
     if (cached) return cached;
     try {
       const response = await fetch(request);
@@ -131,4 +137,40 @@ self.addEventListener('fetch', event => {
       return new Response('', {status: 503, statusText: 'Offline'});
     }
   })());
+});
+
+// Read-only inspection, with optional recovery of missing resources of this release.
+async function inspectOffline(repair) {
+  const cache = await caches.open(CACHE_NAME);
+  const urls = [...APP_SHELL.map(path => new URL(path, self.registration.scope).href), TAILWIND_URL, PDF_URL, ...FA_ASSETS, FONT_CSS];
+  const missing = [];
+  async function check(url) {
+    let response = await cache.match(url);
+    if (!response && repair) {
+      try {
+        const external = new URL(url).origin !== self.location.origin;
+        const mode = url === TAILWIND_URL || url === PDF_URL ? 'no-cors' : external ? 'cors' : 'same-origin';
+        const fresh = await fetch(new Request(url, {mode, cache:'reload'}));
+        if (!fresh.ok && fresh.type !== 'opaque') throw new Error('HTTP');
+        if (url === new URL('./index.html', self.registration.scope).href || url === self.registration.scope) {
+          if (!(await fresh.clone().text()).includes('Restauração corrigida R1 | Offline A5')) throw new Error('Versão incompatível');
+        }
+        await cache.put(url, fresh.clone()); response = fresh;
+      } catch (_) {}
+    }
+    if (!response) missing.push(url);
+    return response;
+  }
+  await Promise.all(urls.map(check));
+  const css = await cache.match(FONT_CSS);
+  if (css) {
+    const fonts = [...new Set(Array.from((await css.text()).matchAll(/url\(\s*['"]?(https:\/\/fonts\.gstatic\.com\/[^)'"\s]+)['"]?\s*\)/g), m => m[1]))];
+    if (!fonts.length) missing.push('Fontes: lista indisponível');
+    urls.push(...fonts); await Promise.all(fonts.map(check));
+  }
+  return {version:'A5', total:urls.length, missing};
+}
+self.addEventListener('message', event => {
+  if (!event.data || event.data.type !== 'AMT_OFFLINE_CHECK' || !event.ports[0]) return;
+  event.waitUntil(inspectOffline(event.data.repair === true).then(report => event.ports[0].postMessage(report)).catch(() => event.ports[0].postMessage({error:true})));
 });
