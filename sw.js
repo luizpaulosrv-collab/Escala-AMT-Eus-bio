@@ -1,5 +1,7 @@
-const CACHE_NAME = 'amt-eusebio-v12-bank-holidays-reports-restore-r1-offline-t1';
+const CACHE_NAME = 'amt-eusebio-v12-bank-holidays-reports-restore-r1-offline-t2';
 const TAILWIND_URL = 'https://cdn.tailwindcss.com/';
+const FA_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/';
+const FA_ASSETS = ['css/all.min.css', 'webfonts/fa-solid-900.woff2', 'webfonts/fa-regular-400.woff2', 'webfonts/fa-brands-400.woff2', 'webfonts/fa-v4compatibility.woff2'].map(path => FA_BASE + path);
 const APP_SHELL = [
   './',
   './index.html',
@@ -22,6 +24,11 @@ self.addEventListener('install', event => {
     const response = await fetch(request);
     if (!response.ok && response.type !== 'opaque') throw new Error('Tailwind unavailable');
     await cache.put(TAILWIND_URL, response);
+    await Promise.all(FA_ASSETS.map(async url => {
+      const response = await fetch(url, {mode: 'cors', cache: 'reload'});
+      if (!response.ok) throw new Error('Font Awesome unavailable: ' + url);
+      await cache.put(url, response);
+    }));
     await self.skipWaiting();
   })());
 });
@@ -45,6 +52,17 @@ self.addEventListener('fetch', event => {
       if (cached) return cached;
       const response = await fetch(request);
       if (response.ok || response.type === 'opaque') await cache.put(TAILWIND_URL, response.clone());
+      return response;
+    })());
+    return;
+  }
+  if (url.href.startsWith(FA_BASE)) {
+    event.respondWith((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const cached = await cache.match(request);
+      if (cached) return cached;
+      const response = await fetch(request);
+      if (response.ok || response.type === 'opaque') await cache.put(request, response.clone());
       return response;
     })());
     return;
