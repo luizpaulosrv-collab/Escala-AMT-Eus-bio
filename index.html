@@ -525,7 +525,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
               <div id="backupSettings" class="config-only-tools hidden border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
                 <h4 class="font-semibold text-sm text-gray-800 dark:text-gray-200"><i class="fa-solid fa-database text-amber-600 mr-1"></i> Backup e restauração</h4>
                 <p class="text-xs text-gray-500 dark:text-gray-400">Exporte um único arquivo ZIP com escalas, configurações, banco de horas, pagamentos, temas e todos os contracheques em PDF. Guarde-o em local seguro; a restauração recupera esses dados neste dispositivo.</p>
-                <div class="flex flex-wrap gap-2"><button onclick="exportBackup()" class="px-3 py-2 rounded-lg bg-amber-500 text-black font-bold text-sm"><i class="fa-solid fa-download mr-1"></i> Exportar backup</button><span class="text-xs text-gray-500">Restauração corrigida R1 | Offline A5</span><div class="w-full space-y-2 text-xs"><button type="button" id="amtOfflineCheck" class="px-3 py-2 rounded-lg border border-gray-400">Verificar recursos offline</button> <button type="button" id="amtOfflineRepair" class="px-3 py-2 rounded-lg border border-gray-400">Recuperar recursos</button> <button type="button" id="amtOfflinePersist" class="px-3 py-2 rounded-lg border border-gray-400">Solicitar armazenamento persistente</button><p id="amtOfflineStatus" role="status" aria-live="polite"></p></div><label class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer text-sm font-semibold"><i class="fa-solid fa-upload mr-1"></i> Restaurar backup<input id="backupFile" type="file" accept=".zip,application/zip,application/x-zip-compressed,application/json,.json" onchange="importBackup(event)" class="hidden"></label></div>
+                <div class="flex flex-wrap gap-2"><button onclick="exportBackup()" class="px-3 py-2 rounded-lg bg-amber-500 text-black font-bold text-sm"><i class="fa-solid fa-download mr-1"></i> Exportar backup</button><span class="text-xs text-gray-500">Restauração corrigida R1 | Offline S5</span><div class="w-full space-y-2 text-xs"><button type="button" id="amtOfflineCheck" class="px-3 py-2 rounded-lg border border-gray-400">Verificar recursos offline</button> <button type="button" id="amtOfflineRepair" class="px-3 py-2 rounded-lg border border-gray-400">Recuperar recursos</button> <button type="button" id="amtOfflinePersist" class="px-3 py-2 rounded-lg border border-gray-400">Solicitar armazenamento persistente</button><p id="amtOfflineStatus" role="status" aria-live="polite"></p></div><label class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer text-sm font-semibold"><i class="fa-solid fa-upload mr-1"></i> Restaurar backup<input id="backupFile" type="file" accept=".zip,application/zip,application/x-zip-compressed,application/json,.json" onchange="importBackup(event)" class="hidden"></label></div>
               </div>
 
         </section>
@@ -792,13 +792,13 @@ html[data-color-theme="blackMono"] .text-red-500 {
     <!-- Biblioteca para gerar relatórios PDF localmente no navegador -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <!-- JAVASCRIPT DE LÓGICA E INTERAÇÃO -->
-    <script>
+    <script type="text/plain" data-amt-app>
         /* ==========================================================================
            1. ESTADO GLOBAL E INICIALIZAÇÃO
            ========================================================================== */
         
         // Data base padrão solicitada: 03 de outubro de 2026 como plantão do ciclo 24x72h.
-        let baseDutyDate = localStorage.getItem('amt_base_date') || '';
+        let baseDutyDate = amtStore.getItem('amt_base_date') || '';
         
         // Data atual selecionada na navegação (mês/ano)
         let currentDate = new Date();
@@ -807,7 +807,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
         let currentView = 'month';
 
         // Armazenamento de Dados de Dias Salvos
-        let eventsData = JSON.parse(localStorage.getItem('amt_events_data')) || {}; window.getEscalaEventsData = () => eventsData;
+        let eventsData = JSON.parse(amtStore.getItem('amt_events_data')) || {}; window.getEscalaEventsData = () => eventsData;
 
         // Dia temporário sendo editado no modal
         let selectedDateStr = '';
@@ -816,12 +816,12 @@ html[data-color-theme="blackMono"] .text-red-500 {
 
         // PWA: registra o service worker quando servido por HTTPS ou localhost.
         if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
-            window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js', {updateViaCache: 'none'}).then(reg => { reg.update().catch(() => {}); }).catch(err => console.warn('Não foi possível registrar o modo PWA:', err)));
+            amtLoaded( () => navigator.serviceWorker.register('./sw.js', {updateViaCache: 'none'}).then(reg => { reg.update().catch(() => {}); }).catch(err => console.warn('Não foi possível registrar o modo PWA:', err)));
         }
-        let pinUnlocked = !localStorage.getItem('amt_pin_hash');
+        let pinUnlocked = !amtStore.getItem('amt_pin_hash');
 
         // Inicializador
-        window.onload = function() {
+        window.amtAppLoad = function() {
             // Inicia o contador antes de qualquer rotina de interface, para que um erro
             // em relatórios/configurações não impeça a contagem regressiva.
             const runCountdownSafely = () => {
@@ -853,7 +853,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
            2. SISTEMA DE TEMAS (LIGHT / DARK)
            ========================================================================== */
         function initTheme() {
-            const savedTheme = localStorage.getItem('amt_theme');
+            const savedTheme = amtStore.getItem('amt_theme');
             if (savedTheme === 'light') {
                 document.documentElement.classList.remove('dark');
             } else {
@@ -861,13 +861,13 @@ html[data-color-theme="blackMono"] .text-red-500 {
             }
         }
 
-        function toggleTheme() {
+        async function toggleTheme() {
             if (document.documentElement.classList.contains('dark')) {
                 document.documentElement.classList.remove('dark');
-                localStorage.setItem('amt_theme', 'light');
+                await amtStore.setItem('amt_theme', 'light');
             } else {
                 document.documentElement.classList.add('dark');
-                localStorage.setItem('amt_theme', 'dark');
+                await amtStore.setItem('amt_theme', 'dark');
             }
         }
 
@@ -882,10 +882,10 @@ html[data-color-theme="blackMono"] .text-red-500 {
 
         function isScheduledDutyDay(targetDate) {
             let profile = {};
-            try { profile = JSON.parse(localStorage.getItem('amt_agent_profile_v35') || '{}'); } catch (_) {}
+            try { profile = JSON.parse(amtStore.getItem('amt_agent_profile_v35') || '{}'); } catch (_) {}
             const monthKey = targetDate.getFullYear() + '-' + String(targetDate.getMonth()+1).padStart(2,'0');
             let configs = [];
-            try { configs = JSON.parse(localStorage.getItem('amt_month_scales') || '[]'); } catch (_) {}
+            try { configs = JSON.parse(amtStore.getItem('amt_month_scales') || '[]'); } catch (_) {}
             const cfg = configs.filter(c => monthKey >= c.startMonth && monthKey <= c.endMonth)
                 .sort((a,b)=>b.startMonth.localeCompare(a.startMonth))[0];
             const anchor = cfg ? cfg.baseDate : '';
@@ -915,12 +915,12 @@ html[data-color-theme="blackMono"] .text-red-500 {
             const modal=document.getElementById('monthScaleModal');modal.classList.remove('hidden');modal.classList.add('flex');
         }
         function closeMonthScaleModal(){const m=document.getElementById('monthScaleModal');m.classList.add('hidden');m.classList.remove('flex');}
-        function saveMonthScaleFromCalendar(){
+        async function saveMonthScaleFromCalendar(){
             const start=currentDate.getFullYear()+'-'+String(currentDate.getMonth()+1).padStart(2,'0');
             const baseDate=document.getElementById('monthScaleBaseDate').value,scale=document.getElementById('monthScaleType').value;
             if(!baseDate){alert('Informe a data de um plantão conhecido neste mês.');return;}
             if(baseDate.slice(0,7)!==start){alert('A data de referência precisa estar dentro do mês configurado.');return;}
-            let configs=[];try{configs=JSON.parse(localStorage.getItem('amt_month_scales')||'[]');}catch(_){}
+            let configs=[];try{configs=JSON.parse(amtStore.getItem('amt_month_scales')||'[]');}catch(_){}
             const conflicts=configs.filter(c=>start>=c.startMonth&&start<=c.endMonth);
             if(conflicts.length){
                 const monthLabel=currentDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
@@ -938,30 +938,30 @@ html[data-color-theme="blackMono"] .text-red-500 {
                 configs=kept;
             }
             configs.push({startMonth:start,endMonth:start,baseDate,scale});configs.sort((a,b)=>a.startMonth.localeCompare(b.startMonth));
-            localStorage.setItem('amt_month_scales',JSON.stringify(configs));closeMonthScaleModal();renderSavedScaleConfigs();renderApp();updateCountdown();alert('Escala configurada somente para '+start+'.');
+            await amtStore.setItem('amt_month_scales',JSON.stringify(configs));closeMonthScaleModal();renderSavedScaleConfigs();renderApp();updateCountdown();alert('Escala configurada somente para '+start+'.');
         }
-        function saveMonthlyScaleFromSettings(){
+        async function saveMonthlyScaleFromSettings(){
             const start=document.getElementById('monthlyScaleMonth').value;
             const baseDate=document.getElementById('monthlyScaleBaseDate').value;
             const scale=document.getElementById('monthlyScaleType').value;
             if(!start||!scale||!baseDate){alert('Selecione o mês, a escala e a data de um plantão conhecido.');return;}
             if(baseDate.slice(0,7)!==start){alert('A data de plantão precisa estar dentro do mês escolhido.');return;}
-            let configs=[];try{configs=JSON.parse(localStorage.getItem('amt_month_scales')||'[]');}catch(_){configs=[];}
+            let configs=[];try{configs=JSON.parse(amtStore.getItem('amt_month_scales')||'[]');}catch(_){configs=[];}
             const conflicts=configs.filter(c=>start>=c.startMonth&&start<=c.endMonth);
             if(conflicts.length&&!confirm('Já existe uma configuração para esse mês. Deseja substituí-la? Os outros meses serão preservados.'))return;
             const kept=[];configs.forEach(c=>{if(start<c.startMonth||start>c.endMonth){kept.push(c);return;}const prev=new Date(Number(start.slice(0,4)),Number(start.slice(5,7))-2,1);const next=new Date(Number(start.slice(0,4)),Number(start.slice(5,7)),1);const pk=prev.getFullYear()+'-'+String(prev.getMonth()+1).padStart(2,'0');const nk=next.getFullYear()+'-'+String(next.getMonth()+1).padStart(2,'0');if(c.startMonth<start)kept.push({...c,endMonth:pk});if(c.endMonth>start)kept.push({...c,startMonth:nk});});
-            kept.push({startMonth:start,endMonth:start,baseDate,scale});kept.sort((a,b)=>a.startMonth.localeCompare(b.startMonth));localStorage.setItem('amt_month_scales',JSON.stringify(kept));renderSavedScaleConfigs();renderApp();updateCountdown();alert('Configuração mensal salva com sucesso.');
+            kept.push({startMonth:start,endMonth:start,baseDate,scale});kept.sort((a,b)=>a.startMonth.localeCompare(b.startMonth));await amtStore.setItem('amt_month_scales',JSON.stringify(kept));renderSavedScaleConfigs();renderApp();updateCountdown();alert('Configuração mensal salva com sucesso.');
         }
-        function saveCustomScaleConfigSeparated(){
+        async function saveCustomScaleConfigSeparated(){
             const start=document.getElementById('customScaleStartMonth').value,end=document.getElementById('customScaleEndMonth').value,baseDate=document.getElementById('customScaleBaseDate').value,scale=document.getElementById('customScaleType').value;
             if(!start||!end||!baseDate){alert('Preencha o mês inicial, o mês final e a data de um plantão conhecido.');return;}
             if(end<start){alert('O mês final não pode ser anterior ao mês inicial.');return;}
             if(baseDate.slice(0,7)<start||baseDate.slice(0,7)>end){alert('A data de plantão precisa estar dentro do período configurado.');return;}
-            let configs=[];try{configs=JSON.parse(localStorage.getItem('amt_month_scales')||'[]');}catch(_){configs=[];}
+            let configs=[];try{configs=JSON.parse(amtStore.getItem('amt_month_scales')||'[]');}catch(_){configs=[];}
             const conflicts=configs.filter(c=>!(end<c.startMonth||start>c.endMonth));
             if(conflicts.length&&!confirm('O período informado conflita com uma ou mais configurações existentes. Deseja substituir as configurações dos meses afetados?'))return;
             const kept=[];configs.forEach(c=>{if(end<c.startMonth||start>c.endMonth){kept.push(c);return;}const prev=new Date(Number(start.slice(0,4)),Number(start.slice(5,7))-2,1);const next=new Date(Number(end.slice(0,4)),Number(end.slice(5,7)),1);const pk=prev.getFullYear()+'-'+String(prev.getMonth()+1).padStart(2,'0');const nk=next.getFullYear()+'-'+String(next.getMonth()+1).padStart(2,'0');if(c.startMonth<start)kept.push({...c,endMonth:pk});if(c.endMonth>end)kept.push({...c,startMonth:nk});});
-            kept.push({startMonth:start,endMonth:end,baseDate,scale});kept.sort((a,b)=>a.startMonth.localeCompare(b.startMonth));localStorage.setItem('amt_month_scales',JSON.stringify(kept));renderSavedScaleConfigs();renderApp();updateCountdown();alert('Configuração personalizada salva com sucesso.');
+            kept.push({startMonth:start,endMonth:end,baseDate,scale});kept.sort((a,b)=>a.startMonth.localeCompare(b.startMonth));await amtStore.setItem('amt_month_scales',JSON.stringify(kept));renderSavedScaleConfigs();renderApp();updateCountdown();alert('Configuração personalizada salva com sucesso.');
         }
         function initializeSeparatedScaleForms(){
             const month=document.getElementById('monthlyScaleMonth');if(month&&month.options.length===1){const now=new Date();for(let i=-2;i<25;i++){const d=new Date(now.getFullYear(),now.getMonth()+i,1);const v=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');const o=document.createElement('option');o.value=v;o.textContent=d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});month.appendChild(o);}month.value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');}
@@ -970,14 +970,14 @@ html[data-color-theme="blackMono"] .text-red-500 {
         function cancelMonthChoice(target){const el=typeof target==='string'?document.getElementById(target):target;if(el){el.value='';if(el.id==='settingsScaleStartMonth'||el.id==='settingsScaleEndMonth')updateScaleConfigFields();}}
         function cancelScaleConfigForm(){ initializeSeparatedScaleForms(); }
         function updateScaleConfigFields(){ initializeSeparatedScaleForms(); }
-        function saveCustomScaleConfig(){
+        async function saveCustomScaleConfig(){
             const mode=document.getElementById('settingsScaleMode').value,start=document.getElementById('settingsScaleStartMonth').value;
             const end=mode==='month'?start:document.getElementById('settingsScaleEndMonth').value;
             const baseDate=document.getElementById('settingsScaleBaseDate').value,scale=document.getElementById('settingsScaleType').value;
             if(!mode||!scale||!start||!end||!baseDate){alert('Selecione o tipo de configuração, a escala, o mês e a data de plantão conhecido.');return;}
             if(end<start){alert('O mês final não pode ser anterior ao mês inicial.');return;}
             if(baseDate.slice(0,7)<start||baseDate.slice(0,7)>end){alert('A data de plantão precisa estar dentro do período configurado.');return;}
-            let configs=[];try{configs=JSON.parse(localStorage.getItem('amt_month_scales')||'[]');}catch(_){}
+            let configs=[];try{configs=JSON.parse(amtStore.getItem('amt_month_scales')||'[]');}catch(_){}
             const conflicts=configs.filter(c=>!(end<c.startMonth||start>c.endMonth));
             if(conflicts.length){
                 const affected=[];let cursor=new Date(Number(start.slice(0,4)),Number(start.slice(5,7))-1,1);const finish=new Date(Number(end.slice(0,4)),Number(end.slice(5,7))-1,1);
@@ -993,26 +993,26 @@ html[data-color-theme="blackMono"] .text-red-500 {
                 });configs=kept;
             }
             configs.push({startMonth:start,endMonth:end,baseDate,scale});configs.sort((a,b)=>a.startMonth.localeCompare(b.startMonth));
-            localStorage.setItem('amt_month_scales',JSON.stringify(configs));renderSavedScaleConfigs();renderApp();updateCountdown();
+            await amtStore.setItem('amt_month_scales',JSON.stringify(configs));renderSavedScaleConfigs();renderApp();updateCountdown();
             cancelScaleConfigForm();
             alert('Escala salva de '+start+' até '+end+'. As demais configurações foram preservadas.');
         }
         function renderSavedScaleConfigs(){const el=document.getElementById('savedScaleConfigs');if(el){el.innerHTML='';el.classList.add('hidden');}updateProfileScaleDisplay();}
         function updateProfileScaleDisplay(){
-            const display=document.getElementById('profileScaleDisplay');if(!display)return;let a=[];try{a=JSON.parse(localStorage.getItem('amt_month_scales')||'[]')}catch(_){}
+            const display=document.getElementById('profileScaleDisplay');if(!display)return;let a=[];try{a=JSON.parse(amtStore.getItem('amt_month_scales')||'[]')}catch(_){}
             if(!a.length){display.textContent='Escala: não configurada';return;}
             const scale=a[a.length-1].scale;display.textContent='Escala: '+(scale==='administrativo'?'Administrativo':scale+'h');
         }
-        function clearSpecificScaleMonth(){
+        async function clearSpecificScaleMonth(){
             const month=document.getElementById('clearScaleMonth').value;if(!month){alert('Selecione o mês cuja escala deseja limpar.');return;}
-            let configs=[];try{configs=JSON.parse(localStorage.getItem('amt_month_scales')||'[]')}catch(_){}
+            let configs=[];try{configs=JSON.parse(amtStore.getItem('amt_month_scales')||'[]')}catch(_){}
             const matches=configs.some(c=>month>=c.startMonth&&month<=c.endMonth);if(!matches){alert('Não há escala configurada para esse mês.');return;}
             const [yy,mm]=month.split('-').map(Number);const label=new Date(yy,mm-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
             if(!confirm('Deseja limpar a configuração da escala de '+label+'? Os outros meses serão preservados.'))return;
             const kept=[];configs.forEach(c=>{if(month<c.startMonth||month>c.endMonth){kept.push(c);return;}const prev=new Date(yy,mm-2,1);const next=new Date(yy,mm,1);const prevKey=prev.getFullYear()+'-'+String(prev.getMonth()+1).padStart(2,'0');const nextKey=next.getFullYear()+'-'+String(next.getMonth()+1).padStart(2,'0');if(c.startMonth<month)kept.push({...c,endMonth:prevKey});if(c.endMonth>month)kept.push({...c,startMonth:nextKey});});
-            localStorage.setItem('amt_month_scales',JSON.stringify(kept));document.getElementById('clearScaleMonth').value='';renderSavedScaleConfigs();renderApp();updateCountdown();alert('Configuração de '+label+' removida.');
+            await amtStore.setItem('amt_month_scales',JSON.stringify(kept));document.getElementById('clearScaleMonth').value='';renderSavedScaleConfigs();renderApp();updateCountdown();alert('Configuração de '+label+' removida.');
         }
-        function clearAllScaleConfigs(){let configs=[];try{configs=JSON.parse(localStorage.getItem('amt_month_scales')||'[]')}catch(_){};if(!configs.length){alert('Não há escalas configuradas para limpar.');return;}if(!confirm('Tem certeza de que deseja resetar TODAS as escalas configuradas? Essa ação não pode ser desfeita.'))return;localStorage.removeItem('amt_month_scales');document.getElementById('clearScaleMonth').value='';renderSavedScaleConfigs();renderApp();updateCountdown();alert('Todas as configurações de escala foram removidas.');}
+        async function clearAllScaleConfigs(){let configs=[];try{configs=JSON.parse(amtStore.getItem('amt_month_scales')||'[]')}catch(_){};if(!configs.length){alert('Não há escalas configuradas para limpar.');return;}if(!confirm('Tem certeza de que deseja resetar TODAS as escalas configuradas? Essa ação não pode ser desfeita.'))return;await amtStore.removeItem('amt_month_scales');document.getElementById('clearScaleMonth').value='';renderSavedScaleConfigs();renderApp();updateCountdown();alert('Todas as configurações de escala foram removidas.');}
 
         // Identifica cada troca como um único par de datas, mesmo que ela apareça nos dois dias.
         function getSwapPairKey(dateKey, swap) {
@@ -1070,7 +1070,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
             const swapName = normalizeAgentName(agentName);
             let registeredName = '';
             try {
-                const profile = JSON.parse(localStorage.getItem('amt_agent_profile_v35') || 'null');
+                const profile = JSON.parse(amtStore.getItem('amt_agent_profile_v35') || 'null');
                 registeredName = normalizeAgentName(profile && profile.name);
             } catch (error) {
                 registeredName = '';
@@ -1720,7 +1720,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
             });
         }
 
-        function saveDayModalData() {
+        async function saveDayModalData() {
             const note = document.getElementById('modalNoteInput').value;
             const swapActive = document.getElementById('modalSwapCheck').checked;
             const agentOne = document.getElementById('modalSwapAgentOne').value.trim();
@@ -1801,14 +1801,14 @@ html[data-color-theme="blackMono"] .text-red-500 {
                 if (ev && !ev.note && (!ev.extra || ev.extra.type === 'none') && (!ev.attachments || !ev.attachments.length) && ev.dayOff !== true && !(ev.swap && ev.swap.active)) delete eventsData[key];
             });
 
-            localStorage.setItem('amt_events_data', JSON.stringify(eventsData));
+            await amtStore.setItem('amt_events_data', JSON.stringify(eventsData));
             closeDayModal();
             renderApp();
             updateCountdown();
             refreshManagementPanel();
         }
 
-        function clearDayData() {
+        async function clearDayData() {
             if (eventsData[selectedDateStr]) {
                 const linkedSwapDate = eventsData[selectedDateStr].swap?.otherDate || '';
                 if (linkedSwapDate && eventsData[linkedSwapDate]?.swap?.otherDate === selectedDateStr) {
@@ -1817,7 +1817,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
                     if (linked && !linked.note && (!linked.extra || linked.extra.type === 'none') && (!linked.attachments || !linked.attachments.length) && linked.dayOff !== true) delete eventsData[linkedSwapDate];
                 }
                 delete eventsData[selectedDateStr];
-                localStorage.setItem('amt_events_data', JSON.stringify(eventsData));
+                await amtStore.setItem('amt_events_data', JSON.stringify(eventsData));
             }
             closeDayModal();
             renderApp();
@@ -1866,10 +1866,10 @@ html[data-color-theme="blackMono"] .text-red-500 {
             renderApp();
         }
 
-        function saveConfigBaseDate() {
+        async function saveConfigBaseDate() {
             const legacyBaseInput = document.getElementById('settingsBaseDateInput'); const val = legacyBaseInput ? legacyBaseInput.value : ''; 
             baseDutyDate = val || '';
-            if (val) localStorage.setItem('amt_base_date', val); else localStorage.removeItem('amt_base_date');
+            if (val) await amtStore.setItem('amt_base_date', val); else await amtStore.removeItem('amt_base_date');
             renderApp(); updateCountdown();
             alert(val ? 'Escala atualizada.' : 'Data base removida. Escolha uma data para ativar a escala.');
         }
@@ -1885,7 +1885,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
             else {monthKeys=Array.from(document.querySelectorAll('.report-compare-month')).map(x=>x.value).filter(validMonth);monthKeys=[...new Set(monthKeys)].sort();if(monthKeys.length<2){alert('Escolha pelo menos dois meses diferentes para comparar.');return;}}
             if (!window.jspdf || !window.jspdf.jsPDF) { alert('Não foi possível carregar o gerador de PDF. Verifique a conexão com a internet e tente novamente.'); return; }
             const selected=id=>document.getElementById(id)?.checked;const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4',orientation:'portrait'});const pw=doc.internal.pageSize.getWidth(),margin=10;let y=31;
-            const profile=JSON.parse(localStorage.getItem('amt_agent_profile_v35')||'{}');const agent='AGT '+(profile.name||'Servidor não cadastrado');
+            const profile=JSON.parse(amtStore.getItem('amt_agent_profile_v35')||'{}');const agent='AGT '+(profile.name||'Servidor não cadastrado');
             doc.setFillColor(18,18,20);doc.rect(0,0,pw,25,'F');doc.setTextColor(255,193,7);doc.setFont('helvetica','bold');doc.setFontSize(14);doc.text('ESCALA AMT EUSÉBIO',margin,10);doc.setTextColor(255,255,255);doc.setFontSize(9);doc.text(agent,margin,18);doc.setFontSize(8);doc.text(monthKeys.length===1?monthKeys[0]:monthKeys[0]+' a '+monthKeys[monthKeys.length-1],pw-margin,18,{align:'right'});doc.setTextColor(25,25,25);
             const line=(txt,bold=false,size=8)=>{doc.setFont('helvetica',bold?'bold':'normal');doc.setFontSize(size);const lines=doc.splitTextToSize(String(txt),pw-margin*2);if(y+lines.length*(size*.42)+1.3>285){doc.addPage();y=14;}doc.text(lines,margin,y);y+=lines.length*(size*.42)+1.3;};
             line(mode==='compare'?'RELATÓRIO — COMPARAÇÃO DE MESES':mode==='period'?'RELATÓRIO DE ESCALA — PERÍODO':'RELATÓRIO MENSAL DE ESCALA',true,10);
@@ -1923,8 +1923,8 @@ html[data-color-theme="blackMono"] .text-red-500 {
             document.getElementById('dashRecords').textContent = monthEvents.length;
             document.getElementById('dashHours').textContent = `${hours} h`;
             document.getElementById('statsSummary').innerHTML = `<div class="grid grid-cols-2 sm:grid-cols-4 gap-2"><div><b>${hours} h</b><br><span class="text-xs">Horas extras registradas</span></div><div><b>${extraShifts}</b><br><span class="text-xs">Plantões extras</span></div><div><b>${swaps}</b><br><span class="text-xs">Trocas registradas</span></div><div><b>${Object.keys(eventsData).length}</b><br><span class="text-xs">Dias com registros</span></div></div>`;
-            document.getElementById('pinStatus').textContent = localStorage.getItem('amt_pin_hash') ? 'PIN configurado neste navegador.' : 'Nenhum PIN configurado.';
-            document.getElementById('reminderStatus').textContent = localStorage.getItem('amt_reminders') ? 'Lembretes ativados neste dispositivo.' : 'Lembretes desativados.';
+            document.getElementById('pinStatus').textContent = amtStore.getItem('amt_pin_hash') ? 'PIN configurado neste navegador.' : 'Nenhum PIN configurado.';
+            document.getElementById('reminderStatus').textContent = amtStore.getItem('amt_reminders') ? 'Lembretes ativados neste dispositivo.' : 'Lembretes desativados.';
         }
 
         function searchRecords() {
@@ -1975,9 +1975,9 @@ html[data-color-theme="blackMono"] .text-red-500 {
         async function getPaystubRecords(){return await window.amtBackupPDFs.read();}
         window.exportBackup=async function(){
             try{
-                const appData={};for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key&&key.startsWith('amt_'))appData[key]=localStorage.getItem(key);}
-                const paystubs=await getPaystubRecords(),files=[];const manifest={app:'Escala AMT Eusébio',format:'escala-amt-backup-zip',backupVersion:3,exportedAt:new Date().toISOString(),data:appData,theme:localStorage.getItem('amt_theme')||'dark',paystubs:[]};
+                const {data:appData,pdfs:paystubs}=await amtStore.snapshot(),files=[];const manifest={app:'Escala AMT Eusébio',format:'escala-amt-backup-zip',backupVersion:3,exportedAt:new Date().toISOString(),data:appData,theme:amtStore.getItem('amt_theme')||'dark',paystubs:[]};
                 for(let i=0;i<paystubs.length;i++){const f=paystubs[i],path=`contracheques/${String(f.month).replace(/[^0-9-]/g,'')}.pdf`,blob=f.blob instanceof Blob?f.blob:new Blob([f.blob],{type:'application/pdf'});files.push({name:path,data:new Uint8Array(await blob.arrayBuffer())});manifest.paystubs.push({month:f.month,name:f.name||`contracheque-${f.month}.pdf`,path,updatedAt:f.updatedAt||null});}
+                manifest.integrity={algorithm:'SHA-256',data:await amtStore.hash(zipTextEncoder.encode(JSON.stringify(manifest.data))),files:{}};for(const f of files)manifest.integrity.files[f.name]=await amtStore.hash(f.data);
                 files.unshift({name:'backup.json',data:zipTextEncoder.encode(JSON.stringify(manifest,null,2))});
                 const zip=makeStoredZip(files),blob=new Blob([zip],{type:'application/zip'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`Backup_Completo_Escala_AMT_${formatDateKey(new Date())}.zip`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),3000);
                 alert(`Backup ZIP gerado com sucesso.\n\nDados e configurações: incluídos\nBanco de horas e pagamentos: incluídos\nContracheques PDF: ${paystubs.length}`);
@@ -1993,7 +1993,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
                 let data,restored={},pdfRecords=[];
                 if(isZip){
                     const entries=readStoredZip(buffer);if(!entries['backup.json'])throw new Error('O ZIP não contém backup.json.');
-                    data=JSON.parse(zipTextDecoder.decode(entries['backup.json']));if(data.format!=='escala-amt-backup-zip'||!Array.isArray(data.paystubs))throw new Error('Formato de backup ZIP não reconhecido.');
+                    data=JSON.parse(zipTextDecoder.decode(entries['backup.json']));if(data.integrity){if(data.integrity.algorithm!=='SHA-256'||await amtStore.hash(zipTextEncoder.encode(JSON.stringify(data.data)))!==data.integrity.data)throw new Error('Integridade dos dados inválida');for(const item of data.paystubs||[]){if(!entries[item.path]||await amtStore.hash(entries[item.path])!==data.integrity.files[item.path])throw new Error('Integridade do PDF inválida');}}if(data.format!=='escala-amt-backup-zip'||!Array.isArray(data.paystubs))throw new Error('Formato de backup ZIP não reconhecido.');
                     if(!data.data||typeof data.data!=='object'||Array.isArray(data.data))throw new Error('Dados do backup inválidos.');
                     Object.entries(data.data).forEach(([k,v])=>{if(k.startsWith('amt_'))restored[k]=typeof v==='string'?v:JSON.stringify(v);});
                     for(const item of data.paystubs){if(!item||typeof item.month!=='string'||typeof item.path!=='string'||!entries[item.path])throw new Error('Contracheque ausente ou inválido no ZIP.');const bytes=entries[item.path];pdfRecords.push({month:item.month,name:item.name||`contracheque-${item.month}.pdf`,type:'application/pdf',blob:new Blob([bytes],{type:'application/pdf'}),updatedAt:item.updatedAt||new Date().toISOString()});}
@@ -2010,18 +2010,14 @@ html[data-color-theme="blackMono"] .text-red-500 {
                 const pdfNote=isZip?`\nContracheques que serão restaurados: ${pdfRecords.length}`:'\nAtenção: este backup JSON antigo não contém contracheques. Os PDFs já existentes neste dispositivo serão preservados.';
                 if(!confirm('A restauração substituirá os dados e configurações correspondentes deste aplicativo.'+pdfNote+'\nDeseja continuar?')){input.value='';return;}
                 stage='gravação dos registros';
-                const previous={};for(const k of Object.keys(restored))previous[k]=localStorage.getItem(k);
-                try{
-                    Object.entries(restored).forEach(([k,v])=>localStorage.setItem(k,v));
-                    if(isZip){stage='gravação dos contracheques';await window.amtBackupPDFs.replace(pdfRecords);}
-                }catch(err){Object.entries(previous).forEach(([k,v])=>{try{if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(_){}});throw err;}
+                await amtStore.restore(restored,isZip?pdfRecords:null);
                 alert('Backup restaurado com sucesso! '+Object.keys(JSON.parse(restored.amt_events_data||'{}')).length+' registros no calendário; '+pdfRecords.length+' PDFs importados. O aplicativo será recarregado.');
                 input.value='';location.reload();
             }catch(e){console.error('Falha ao importar backup:',e);alert('Não foi possível restaurar este backup. Etapa: '+stage+'. '+(e?.message||String(e)));}
             input.value='';
         };
         async function resetAppData() {
-            const storedPinHash=localStorage.getItem('amt_pin_hash');
+            const storedPinHash=amtStore.getItem('amt_pin_hash');
             if(storedPinHash){
                 const enteredPin=prompt('Para resetar o aplicativo e apagar os dados, digite o PIN configurado:');
                 if(enteredPin===null)return;
@@ -2033,8 +2029,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
             const secondConfirm = confirm('Confirma a exclusão de todos os dados da Escala AMT e o retorno à tela inicial para um novo cadastro?');
             if (!secondConfirm) return;
             try {
-                Object.keys(localStorage).filter(key => key.startsWith('amt_')).forEach(key => localStorage.removeItem(key));
-                localStorage.removeItem('amt_agent_profile_v35');
+                await amtStore.reset();
             } catch (error) {
                 alert('Não foi possível apagar todos os dados. Verifique as permissões do navegador e tente novamente.');
                 return;
@@ -2046,17 +2041,17 @@ html[data-color-theme="blackMono"] .text-red-500 {
         async function enableReminders() {
             if (!('Notification' in window)) { alert('Este navegador não oferece suporte a notificações.'); return; }
             const permission=await Notification.requestPermission(); if(permission!=='granted'){ alert('Permissão para notificações não concedida.'); return; }
-            localStorage.setItem('amt_reminders',document.getElementById('reminderHours').value); refreshManagementPanel(); checkReminder(); alert('Lembretes ativados. O aviso depende das permissões e de o navegador/sistema permitir notificações em segundo plano; isso não configura o alarme nativo do celular.');
+            await amtStore.setItem('amt_reminders',document.getElementById('reminderHours').value); refreshManagementPanel(); checkReminder(); alert('Lembretes ativados. O aviso depende das permissões e de o navegador/sistema permitir notificações em segundo plano; isso não configura o alarme nativo do celular.');
         }
-        function checkReminder() {
-            if (Notification.permission!=='granted' || !localStorage.getItem('amt_reminders')) return;
-            const hours=Number(localStorage.getItem('amt_reminders'))||3; const now=new Date(); const target=new Date(now); target.setHours(6,0,0,0); if(target<=now) target.setDate(target.getDate()+1);
-            if (isDutyDay(target) && (target-now)<=hours*3600000 && (target-now)>=(hours-1/60)*3600000) { const key='amt_notified_'+formatDateKey(target); if(!localStorage.getItem(key)){ new Notification('Escala AMT Eusébio',{body:`Seu plantão está previsto para ${formatDateFormatted(target)} às 06:00.`, vibrate:[300,150,300], tag:'amt-plantao'}); localStorage.setItem(key,'1'); } }
+        async function checkReminder() {
+            if (Notification.permission!=='granted' || !amtStore.getItem('amt_reminders')) return;
+            const hours=Number(amtStore.getItem('amt_reminders'))||3; const now=new Date(); const target=new Date(now); target.setHours(6,0,0,0); if(target<=now) target.setDate(target.getDate()+1);
+            if (isDutyDay(target) && (target-now)<=hours*3600000 && (target-now)>=(hours-1/60)*3600000) { const key='amt_notified_'+formatDateKey(target); if(!amtStore.getItem(key)){ new Notification('Escala AMT Eusébio',{body:`Seu plantão está previsto para ${formatDateFormatted(target)} às 06:00.`, vibrate:[300,150,300], tag:'amt-plantao'}); await amtStore.setItem(key,'1'); } }
         }
         async function digestPin(pin) { const data=new TextEncoder().encode(pin); const hash=await crypto.subtle.digest('SHA-256',data); return Array.from(new Uint8Array(hash)).map(b=>b.toString(16).padStart(2,'0')).join(''); }
-        async function setAppPin() { const pin=document.getElementById('pinInput').value; if(!/^\d{4,8}$/.test(pin)){ alert('Use um PIN numérico de 4 a 8 dígitos.'); return; } if(!crypto?.subtle){ alert('Este navegador não oferece criptografia segura para configurar o PIN.'); return; } localStorage.setItem('amt_pin_hash',await digestPin(pin)); document.getElementById('pinInput').value=''; pinUnlocked=true; refreshManagementPanel(); alert('PIN configurado neste navegador.'); }
-        async function requestPinUnlock() { const stored=localStorage.getItem('amt_pin_hash'); if(!stored) return; for(let tries=0;tries<3;tries++){ const pin=prompt('Digite seu PIN para acessar a Escala AMT Eusébio:'); if(pin===null) { document.body.innerHTML='<main style="font-family:Arial;padding:32px;text-align:center"><h2>Aplicativo bloqueado</h2><p>Recarregue a página para tentar novamente.</p></main>'; return; } if(await digestPin(pin)===stored){ pinUnlocked=true; return; } alert('PIN incorreto.'); } document.body.innerHTML='<main style="font-family:Arial;padding:32px;text-align:center"><h2>Aplicativo bloqueado</h2><p>Recarregue a página para tentar novamente.</p></main>'; }
-        async function removeAppPin() { if(!localStorage.getItem('amt_pin_hash')) { alert('Não há PIN configurado.'); return; } const pin=prompt('Digite o PIN atual para removê-lo:'); if(pin && await digestPin(pin)===localStorage.getItem('amt_pin_hash')) { localStorage.removeItem('amt_pin_hash'); pinUnlocked=true; refreshManagementPanel(); alert('PIN removido.'); } else alert('PIN incorreto.'); }
+        async function setAppPin() { const pin=document.getElementById('pinInput').value; if(!/^\d{4,8}$/.test(pin)){ alert('Use um PIN numérico de 4 a 8 dígitos.'); return; } if(!crypto?.subtle){ alert('Este navegador não oferece criptografia segura para configurar o PIN.'); return; } await amtStore.setItem('amt_pin_hash',await digestPin(pin)); document.getElementById('pinInput').value=''; pinUnlocked=true; refreshManagementPanel(); alert('PIN configurado neste navegador.'); }
+        async function requestPinUnlock() { const stored=amtStore.getItem('amt_pin_hash'); if(!stored) return; for(let tries=0;tries<3;tries++){ const pin=prompt('Digite seu PIN para acessar a Escala AMT Eusébio:'); if(pin===null) { document.body.innerHTML='<main style="font-family:Arial;padding:32px;text-align:center"><h2>Aplicativo bloqueado</h2><p>Recarregue a página para tentar novamente.</p></main>'; return; } if(await digestPin(pin)===stored){ pinUnlocked=true; return; } alert('PIN incorreto.'); } document.body.innerHTML='<main style="font-family:Arial;padding:32px;text-align:center"><h2>Aplicativo bloqueado</h2><p>Recarregue a página para tentar novamente.</p></main>'; }
+        async function removeAppPin() { if(!amtStore.getItem('amt_pin_hash')) { alert('Não há PIN configurado.'); return; } const pin=prompt('Digite o PIN atual para removê-lo:'); if(pin && await digestPin(pin)===amtStore.getItem('amt_pin_hash')) { await amtStore.removeItem('amt_pin_hash'); pinUnlocked=true; refreshManagementPanel(); alert('PIN removido.'); } else alert('PIN incorreto.'); }
         /* ==========================================================================
            10. UTILITÁRIOS DE FORMATO DE DATA
            ========================================================================== */
@@ -2078,13 +2073,13 @@ html[data-color-theme="blackMono"] .text-red-500 {
 
 
 
-<script>
+<script type="text/plain" data-amt-app>
 (function(){
  const PROFILE_KEY='amt_agent_profile_v35';
  let editingProfile=false;
  window.showAgentRegistration=function(editMode=false){
    editingProfile=!!editMode;
-   const p=JSON.parse(localStorage.getItem(PROFILE_KEY)||'null');
+   const p=JSON.parse(amtStore.getItem(PROFILE_KEY)||'null');
    document.getElementById('agentRegistrationTitle').textContent=editingProfile?'Editar cadastro de servidor(a)':'Cadastro de servidor(a)';
    const saveBtn=document.querySelector('#agentProfileForm button[type="submit"]');
    if(saveBtn)saveBtn.textContent=editingProfile?'Salvar alterações':'Salvar cadastro';
@@ -2092,7 +2087,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
    const pinField=document.getElementById('agentAccessPinInput');if(pinField)pinField.value='';
    document.getElementById('agentRegistration').classList.remove('hidden');
  };
- window.cancelAgentRegistration=function(){document.getElementById('agentRegistration').classList.add('hidden');if(editingProfile){const settings=document.getElementById('settingsScreen');if(settings)settings.classList.remove('hidden');}else if(!localStorage.getItem(PROFILE_KEY)){document.getElementById('welcomeScreen').classList.remove('hidden');}editingProfile=false;};
+ window.cancelAgentRegistration=function(){document.getElementById('agentRegistration').classList.add('hidden');if(editingProfile){const settings=document.getElementById('settingsScreen');if(settings)settings.classList.remove('hidden');}else if(!amtStore.getItem(PROFILE_KEY)){document.getElementById('welcomeScreen').classList.remove('hidden');}editingProfile=false;};
  function applyProfile(p){
    document.getElementById('profileNameDisplay').textContent='AGT '+p.name;
    document.getElementById('profileMatriculaDisplay').textContent='Matrícula: '+p.matricula;
@@ -2111,8 +2106,8 @@ html[data-color-theme="blackMono"] .text-red-500 {
    if(pin&&!/^\d{4,8}$/.test(pin)){alert('A senha de acesso deve ter de 4 a 8 dígitos numéricos.');return;}
    if(pin&&!crypto?.subtle){alert('Este navegador não permite configurar o PIN com segurança. A senha não foi alterada.');return;}
    try {
-     localStorage.setItem(PROFILE_KEY,JSON.stringify(p));
-     if(pin){localStorage.setItem('amt_pin_hash',await digestPin(pin));pinUnlocked=true;}
+     await amtStore.setItem(PROFILE_KEY,JSON.stringify(p));
+     if(pin){await amtStore.setItem('amt_pin_hash',await digestPin(pin));pinUnlocked=true;}
      if(pinInput)pinInput.value='';
      applyProfile(p);
      // Fechar primeiro as telas de entrada para garantir a transição mesmo se
@@ -2130,8 +2125,8 @@ html[data-color-theme="blackMono"] .text-red-500 {
      alert('Não foi possível salvar o cadastro neste navegador. Verifique se o armazenamento local está habilitado e tente novamente.');
    }
  });
- document.addEventListener('DOMContentLoaded',function(){
-   const p=JSON.parse(localStorage.getItem(PROFILE_KEY)||'null');
+ amtReady(function(){
+   const p=JSON.parse(amtStore.getItem(PROFILE_KEY)||'null');
    if(p){applyProfile(p);document.getElementById('welcomeScreen').classList.add('hidden');}
    if(typeof renderSavedScaleConfigs==='function')renderSavedScaleConfigs();
    else {document.getElementById('welcomeScreen').classList.remove('hidden');}
@@ -2167,8 +2162,8 @@ html[data-color-theme="blackMono"] .text-red-500 {
   };
   const themeOptions=()=>Object.entries(themes).map(([key,t])=>`<option value="${key}">${t.name}</option>`).join('');
   function moneyHours(n){return (Number(n)||0).toLocaleString('pt-BR',{maximumFractionDigits:2})+' h';}
-  function readPayments(){try{return JSON.parse(localStorage.getItem(BANK_KEY)||'[]')}catch(_){return []}}
-  function writePayments(v){localStorage.setItem(BANK_KEY,JSON.stringify(v));}
+  function readPayments(){try{return JSON.parse(amtStore.getItem(BANK_KEY)||'[]')}catch(_){return []}}
+  async function writePayments(v){await amtStore.setItem(BANK_KEY,JSON.stringify(v));}
   function bankModel(){
     const generated={};let extraShifts=0;
     Object.entries((window.getEscalaEventsData&&window.getEscalaEventsData())||{}).forEach(([key,e])=>{const x=e&&e.extra;if(!x||!['hours','shift'].includes(x.type))return;const rate=String(x.rate||'50');if(!['50','100'].includes(rate))return;const hours=x.type==='shift'?24:Math.max(0,Math.min(24,Number(x.hours)||0));if(!hours)return;const month=key.slice(0,7);generated[month]??={50:0,100:0,shifts:0};generated[month][rate]+=hours;if(x.type==='shift'){generated[month].shifts++;extraShifts++;}});
@@ -2203,14 +2198,14 @@ html[data-color-theme="blackMono"] .text-red-500 {
     const formSection=document.createElement('section');formSection.className='rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/60 p-4 space-y-3';formSection.innerHTML=`<h3 class="font-bold text-base">Registrar pagamento informado pelo RH</h3><p class="text-xs text-gray-500">Informe exatamente a composição recebida. O aplicativo não escolhe a categoria nem presume a regra da empresa. As horas de 50% e 100% são baixadas separadamente; plantões extras já entram no saldo conforme sua classificação.</p><form id="bankPaymentForm" class="grid grid-cols-1 sm:grid-cols-2 gap-3"><label class="text-xs font-semibold">Data do pagamento<input name="date" type="date" required class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2.5 text-base"></label><label class="text-xs font-semibold">Horas de 50% pagas<input name="hours50" type="number" min="0" step="0.01" value="0" required class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2.5 text-base"></label><label class="text-xs font-semibold">Horas de 100% pagas<input name="hours100" type="number" min="0" step="0.01" value="0" required class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2.5 text-base"></label><label class="text-xs font-semibold">Observação (opcional)<input name="note" type="text" maxlength="180" placeholder="Ex.: pagamento conforme contracheque" class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2.5 text-base"></label><div class="sm:col-span-2 rounded-xl bg-gray-100 dark:bg-gray-800 p-3 text-sm flex items-center justify-between"><span>Total deste pagamento</span><strong id="bankPaymentTotal">0h / 44h</strong></div><p id="bankPaymentValidation" class="sm:col-span-2 text-xs text-gray-500">O limite mensal de 44 horas considera a soma de 50% + 100% + horas pagas originadas de plantões extras.</p><button class="sm:col-span-2 rounded-lg bg-emerald-600 text-white font-bold px-4 py-3" type="submit">Salvar pagamento</button></form>`;root.appendChild(formSection);
     const form=formSection.querySelector('#bankPaymentForm'),h50=form.elements.hours50,h100=form.elements.hours100,date=form.elements.date,totalEl=formSection.querySelector('#bankPaymentTotal'),validation=formSection.querySelector('#bankPaymentValidation');
     const updateTotal=()=>{const n=(Number(h50.value)||0)+(Number(h100.value)||0),prior=date.value?totalPaidInMonth(date.value):0;totalEl.textContent=`${moneyHours(n)} / 44h`;const over=n+prior>44.0001;validation.textContent=over?`Atenção: já existem ${moneyHours(prior)} pagos neste mês. O total ultrapassaria 44 horas.`:`Já pagos no mês selecionado: ${moneyHours(prior)}. Limite disponível: ${moneyHours(Math.max(0,44-prior))}.`;validation.className='sm:col-span-2 text-xs '+(over?'text-red-600':'text-gray-500');};[h50,h100,date].forEach(el=>el.addEventListener('input',updateTotal));
-    form.addEventListener('submit',e=>{e.preventDefault();const a=Number(h50.value)||0,b=Number(h100.value)||0,dt=date.value,total=a+b;if(!dt||total<=0){alert('Informe a data e pelo menos uma quantidade de horas paga.');return;}if(totalPaidInMonth(dt)+total>44.0001){alert('Este lançamento ultrapassa o limite de 44 horas pagas no mês.');return;}const available50=Math.max(0,pending50),available100=Math.max(0,pending100);if(a>available50+0.0001||b>available100+0.0001){alert(`Saldo insuficiente. Disponível: ${moneyHours(available50)} de 50% e ${moneyHours(available100)} de 100%.`);return;}const arr=readPayments();arr.push({id:(crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())),hours50:a,hours100:b,date:dt,note:form.elements.note.value.trim(),createdAt:new Date().toISOString()});writePayments(arr);renderBankHours();});
+    form.addEventListener('submit',async e=>{e.preventDefault();const a=Number(h50.value)||0,b=Number(h100.value)||0,dt=date.value,total=a+b;if(!dt||total<=0){alert('Informe a data e pelo menos uma quantidade de horas paga.');return;}if(totalPaidInMonth(dt)+total>44.0001){alert('Este lançamento ultrapassa o limite de 44 horas pagas no mês.');return;}const available50=Math.max(0,pending50),available100=Math.max(0,pending100);if(a>available50+0.0001||b>available100+0.0001){alert(`Saldo insuficiente. Disponível: ${moneyHours(available50)} de 50% e ${moneyHours(available100)} de 100%.`);return;}const arr=readPayments();arr.push({id:(crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())),hours50:a,hours100:b,date:dt,note:form.elements.note.value.trim(),createdAt:new Date().toISOString()});await writePayments(arr);renderBankHours();});
     const monthly=document.createElement('section');monthly.className='rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/60 p-4 space-y-3';monthly.innerHTML='<h3 class="font-bold">Extrato por competência de origem</h3><p class="text-xs text-gray-500">O saldo é acumulado entre meses. Os pagamentos são atribuídos às competências mais antigas dentro de cada percentual (FIFO), sem impor prioridade entre 50% e 100%. Assim, cada pagamento pode combinar livremente as duas categorias, respeitando o que o RH informou.</p>';if(!model.months.length)monthly.innerHTML+='<p class="text-sm text-gray-500">Ainda não há horas extras registradas no calendário.</p>';else{const table=document.createElement('div');table.className='overflow-x-auto';table.innerHTML='<table class="w-full text-sm min-w-[620px]"><thead><tr class="text-left border-b border-gray-200 dark:border-gray-700"><th class="py-2">Competência</th><th>50% geradas</th><th>50% pagas</th><th>100% geradas</th><th>100% pagas</th><th>Pendente</th></tr></thead><tbody></tbody></table>';const body=table.querySelector('tbody');model.months.forEach(m=>{const g=model.generated[m]||{'50':0,'100':0},p=model.paidByMonth[m]||{'50':0,'100':0},pending=(g['50']-p['50'])+(g['100']-p['100']);const [y,mo]=m.split('-');const tr=document.createElement('tr');tr.className='border-b border-gray-100 dark:border-gray-800';tr.innerHTML=`<td class="py-2 font-semibold capitalize">${new Date(+y,+mo-1,1).toLocaleDateString('pt-BR',{month:'short',year:'numeric'})}</td><td>${moneyHours(g['50'])}</td><td>${moneyHours(p['50'])}</td><td>${moneyHours(g['100'])}</td><td>${moneyHours(p['100'])}</td><td class="font-bold ${pending>0?'text-amber-600':'text-emerald-600'}">${moneyHours(pending)}</td>`;body.appendChild(tr);});monthly.appendChild(table);}root.appendChild(monthly);
-    const history=document.createElement('section');history.className='rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/60 p-4';history.innerHTML='<h3 class="font-bold mb-2">Histórico de pagamentos</h3>';const payments=model.payments.slice().sort((a,b)=>b.date.localeCompare(a.date));if(!payments.length)history.innerHTML+='<p class="text-sm text-gray-500">Nenhum pagamento informado ainda.</p>';else payments.forEach(x=>{const row=document.createElement('div');row.className='flex items-start justify-between gap-3 border-t border-gray-200 dark:border-gray-700 py-3 text-sm';const total=(Number(x.hours50)||0)+(Number(x.hours100)||0)||(Number(x.hours)||0);const parts=x.hours50!==undefined||x.hours100!==undefined?`${moneyHours(x.hours50)} de 50% + ${moneyHours(x.hours100)} de 100%`:`${moneyHours(x.hours)} · ${x.rate}%`;const d=String(x.date||'').split('-').reverse().join('/');const detail=model.allocations.find(a=>a.payment.id===x.id);const origin=['50','100'].map(rate=>{const list=detail?.allocations?.[rate]||[];return list.length?`${rate}%: `+list.map(a=>`${moneyHours(a.hours)} de ${a.month.slice(5,7)}/${a.month.slice(0,4)}`).join(', '):'';}).filter(Boolean).join(' · ');row.innerHTML=`<div><b>${d} · ${moneyHours(total)}</b><div class="text-xs text-gray-500">${parts}${origin?' · Origem: '+origin:''}${x.note?' · '+String(x.note).replace(/[<>]/g,''):''}</div></div><button type="button" class="text-red-600 font-semibold" aria-label="Excluir pagamento">Excluir</button>`;row.querySelector('button').onclick=()=>{if(confirm('Excluir este lançamento de pagamento? O saldo será recalculado.')){writePayments(readPayments().filter(p=>p.id!==x.id));renderBankHours();}};history.appendChild(row);});root.appendChild(history);
+    const history=document.createElement('section');history.className='rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/60 p-4';history.innerHTML='<h3 class="font-bold mb-2">Histórico de pagamentos</h3>';const payments=model.payments.slice().sort((a,b)=>b.date.localeCompare(a.date));if(!payments.length)history.innerHTML+='<p class="text-sm text-gray-500">Nenhum pagamento informado ainda.</p>';else payments.forEach(x=>{const row=document.createElement('div');row.className='flex items-start justify-between gap-3 border-t border-gray-200 dark:border-gray-700 py-3 text-sm';const total=(Number(x.hours50)||0)+(Number(x.hours100)||0)||(Number(x.hours)||0);const parts=x.hours50!==undefined||x.hours100!==undefined?`${moneyHours(x.hours50)} de 50% + ${moneyHours(x.hours100)} de 100%`:`${moneyHours(x.hours)} · ${x.rate}%`;const d=String(x.date||'').split('-').reverse().join('/');const detail=model.allocations.find(a=>a.payment.id===x.id);const origin=['50','100'].map(rate=>{const list=detail?.allocations?.[rate]||[];return list.length?`${rate}%: `+list.map(a=>`${moneyHours(a.hours)} de ${a.month.slice(5,7)}/${a.month.slice(0,4)}`).join(', '):'';}).filter(Boolean).join(' · ');row.innerHTML=`<div><b>${d} · ${moneyHours(total)}</b><div class="text-xs text-gray-500">${parts}${origin?' · Origem: '+origin:''}${x.note?' · '+String(x.note).replace(/[<>]/g,''):''}</div></div><button type="button" class="text-red-600 font-semibold" aria-label="Excluir pagamento">Excluir</button>`;row.querySelector('button').onclick=async()=>{if(confirm('Excluir este lançamento de pagamento? O saldo será recalculado.')){await writePayments(readPayments().filter(p=>p.id!==x.id));renderBankHours();}};history.appendChild(row);});root.appendChild(history);
   };
   window.openExtraArea=function(which){const app=document.getElementById('appMain');const settings=document.getElementById('settingsScreen');if(settings)settings.classList.add('hidden');if(app)app.classList.add('hidden');document.getElementById('bankHoursScreen').classList.toggle('hidden',which!=='bank');document.getElementById('paystubScreen').classList.toggle('hidden',which!=='paystub');if(which==='bank')renderBankHours();if(which==='paystub')renderPaystubList();};
   window.closeExtraArea=function(){document.getElementById('bankHoursScreen').classList.add('hidden');document.getElementById('paystubScreen').classList.add('hidden');const app=document.getElementById('appMain');if(app)app.classList.remove('hidden');};
-  // Contracheques em IndexedDB: PDFs não ocupam o limite pequeno do localStorage.
-  function dbOpen(){return new Promise((resolve,reject)=>{const req=indexedDB.open('amt_paystubs_db',1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('pdfs'))db.createObjectStore('pdfs',{keyPath:'month'});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
+  // Contracheques em IndexedDB: PDFs não ocupam o limite pequeno do amtStore.
+  function dbOpen(){return amtStore.open();}
   async function dbAll(){const db=await dbOpen();return new Promise((resolve,reject)=>{const r=db.transaction('pdfs','readonly').objectStore('pdfs').getAll();r.onsuccess=()=>{db.close();resolve(r.result||[])};r.onerror=()=>{db.close();reject(r.error)}})}
   // Ponte explícita entre o módulo de backup e o banco privado de PDFs.
   window.amtBackupPDFs=Object.freeze({read:dbAll,replace:async function(records){
@@ -2231,10 +2226,10 @@ html[data-color-theme="blackMono"] .text-red-500 {
     const screens=document.createElement('div');screens.innerHTML=`<main id="bankHoursScreen" class="hidden max-w-3xl mx-auto px-4 py-6 space-y-4"><div class="flex items-center justify-between"><div><h2 class="text-xl font-extrabold">Banco de horas</h2><p class="text-sm text-gray-500">Saldo calculado automaticamente pelos registros do calendário.</p></div><button onclick="closeExtraArea()" class="rounded-xl bg-amber-500 text-black px-4 py-2 font-bold">Voltar</button></div><div class="rounded-xl bg-blue-50 dark:bg-blue-950/30 p-3 text-xs text-blue-900 dark:text-blue-200">Controle por competência: horas de 50% e 100% acumuladas separadamente. Cada plantão extra gera 24 horas na categoria registrada no calendário. O pagamento é informado manualmente, com limite total de 44 horas por mês.</div><div id="bankHoursContent" class="space-y-3"></div></main><main id="paystubScreen" class="hidden max-w-3xl mx-auto px-4 py-6 space-y-4"><div class="flex items-center justify-between"><div><h2 class="text-xl font-extrabold">Contracheques</h2><p class="text-sm text-gray-500">Seus PDFs ficam armazenados neste dispositivo.</p></div><button onclick="closeExtraArea()" class="rounded-xl bg-amber-500 text-black px-4 py-2 font-bold">Voltar</button></div><section class="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/60 p-4 space-y-3"><h3 class="font-bold">Adicionar contracheque mensal</h3><label class="block text-sm font-semibold">Mês de referência<input id="paystubMonth" type="month" placeholder="Selecionar mês" aria-label="Selecionar mês" class="mt-1 w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 p-3 text-base"></label><label class="block text-sm font-semibold">Arquivo PDF<input id="paystubFile" type="file" accept="application/pdf,.pdf" onchange="savePaystub(this)" class="mt-1 block w-full text-sm"></label><p class="text-xs text-gray-500">Um arquivo por mês. Se enviar outro PDF para o mesmo mês, ele substituirá o anterior.</p></section><section class="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/60 p-4 space-y-3"><h3 class="font-bold">Contracheques salvos</h3><div id="paystubList" class="space-y-2"></div></section></main>`;
     app.parentNode.insertBefore(screens,app.nextSibling);
   }
-  function applyColorTheme(key){const selected=themes[key]?key:'graphite';const t=themes[selected];const root=document.documentElement;root.dataset.colorTheme=selected;root.style.setProperty('--amt-theme-light',t.bg);root.style.setProperty('--amt-theme-dark',t.dark);root.style.setProperty('--amt-header-light',t.headerLight);root.style.setProperty('--amt-header-dark',t.headerDark);root.style.setProperty('--amt-header-border-light',t.borderLight);root.style.setProperty('--amt-header-border-dark',t.borderDark);root.style.setProperty('--amt-accent',t.accent);const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute('content',document.documentElement.classList.contains('dark')?t.headerDark:t.headerLight);localStorage.setItem(THEME_KEY,selected);['amtThemeMenuSelect','amtColorThemeSelect'].forEach(id=>{const el=document.getElementById(id);if(el&&el.value!==selected)el.value=selected;});}
-  window.setThemeMode=function(mode){if(mode==='dark')document.documentElement.classList.add('dark');else document.documentElement.classList.remove('dark');localStorage.setItem('amt_theme',mode);const t=themes[localStorage.getItem(THEME_KEY)||'graphite']||themes.graphite;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute('content',mode==='dark'?t.headerDark:t.headerLight);};
+  async function applyColorTheme(key){const selected=themes[key]?key:'graphite';const t=themes[selected];const root=document.documentElement;root.dataset.colorTheme=selected;root.style.setProperty('--amt-theme-light',t.bg);root.style.setProperty('--amt-theme-dark',t.dark);root.style.setProperty('--amt-header-light',t.headerLight);root.style.setProperty('--amt-header-dark',t.headerDark);root.style.setProperty('--amt-header-border-light',t.borderLight);root.style.setProperty('--amt-header-border-dark',t.borderDark);root.style.setProperty('--amt-accent',t.accent);const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute('content',document.documentElement.classList.contains('dark')?t.headerDark:t.headerLight);if(amtStore.getItem(THEME_KEY)!==selected)await amtStore.setItem(THEME_KEY,selected);['amtThemeMenuSelect','amtColorThemeSelect'].forEach(id=>{const el=document.getElementById(id);if(el&&el.value!==selected)el.value=selected;});}
+  window.setThemeMode=async function(mode){if(mode==='dark')document.documentElement.classList.add('dark');else document.documentElement.classList.remove('dark');await amtStore.setItem('amt_theme',mode);const t=themes[amtStore.getItem(THEME_KEY)||'graphite']||themes.graphite;const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute('content',mode==='dark'?t.headerDark:t.headerLight);};
   window.toggleThemeMenu=function(){const menu=document.getElementById('amtThemeMenu');if(menu)menu.classList.toggle('hidden');};
-  function addThemeMenu(){const header=document.querySelector('header');const trigger=document.getElementById('btnThemeToggle');if(!header||!trigger||document.getElementById('amtThemeMenu'))return;const menu=document.createElement('div');menu.id='amtThemeMenu';menu.className='hidden absolute right-2 top-16 z-[80] w-64 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 shadow-2xl space-y-3';menu.innerHTML='<div class="font-bold text-sm">Aparência do aplicativo</div><div class="grid grid-cols-2 gap-2"><button type="button" id="amtModeLight" class="rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm font-semibold">☀️ Claro</button><button type="button" id="amtModeDark" class="rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm font-semibold">🌙 Escuro</button></div><label class="block text-xs font-bold">Paleta de cores<select id="amtThemeMenuSelect" class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-sm">'+themeOptions()+'</select></label><p class="text-[11px] text-gray-500">As cores de plantões, folgas, extras e trocas não são alteradas.</p>';header.appendChild(menu);menu.querySelector('#amtModeLight').onclick=()=>{setThemeMode('light');menu.classList.add('hidden')};menu.querySelector('#amtModeDark').onclick=()=>{setThemeMode('dark');menu.classList.add('hidden')};const sel=menu.querySelector('select');sel.value=localStorage.getItem(THEME_KEY)||'graphite';sel.onchange=()=>applyColorTheme(sel.value);document.addEventListener('click',e=>{if(!menu.contains(e.target)&&!trigger.contains(e.target))menu.classList.add('hidden')});}
+  function addThemeMenu(){const header=document.querySelector('header');const trigger=document.getElementById('btnThemeToggle');if(!header||!trigger||document.getElementById('amtThemeMenu'))return;const menu=document.createElement('div');menu.id='amtThemeMenu';menu.className='hidden absolute right-2 top-16 z-[80] w-64 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 shadow-2xl space-y-3';menu.innerHTML='<div class="font-bold text-sm">Aparência do aplicativo</div><div class="grid grid-cols-2 gap-2"><button type="button" id="amtModeLight" class="rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm font-semibold">☀️ Claro</button><button type="button" id="amtModeDark" class="rounded-lg border border-gray-300 dark:border-gray-700 px-3 py-2 text-sm font-semibold">🌙 Escuro</button></div><label class="block text-xs font-bold">Paleta de cores<select id="amtThemeMenuSelect" class="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 p-2.5 text-sm">'+themeOptions()+'</select></label><p class="text-[11px] text-gray-500">As cores de plantões, folgas, extras e trocas não são alteradas.</p>';header.appendChild(menu);menu.querySelector('#amtModeLight').onclick=()=>{setThemeMode('light');menu.classList.add('hidden')};menu.querySelector('#amtModeDark').onclick=()=>{setThemeMode('dark');menu.classList.add('hidden')};const sel=menu.querySelector('select');sel.value=amtStore.getItem(THEME_KEY)||'graphite';sel.onchange=()=>applyColorTheme(sel.value);document.addEventListener('click',e=>{if(!menu.contains(e.target)&&!trigger.contains(e.target))menu.classList.add('hidden')});}
   function addThemePicker(){const old=document.getElementById('colorThemePicker');if(old)old.remove();}
   function enhanceScaleForms(){
     const monthOptions=()=>{const out=[];const now=new Date();for(let i=-24;i<=36;i++){const d=new Date(now.getFullYear(),now.getMonth()+i,1),v=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');out.push({v,label:d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'})});}return out;};
@@ -2297,14 +2292,14 @@ html[data-color-theme="blackMono"] .text-red-500 {
   };
   function closeScaleDatePicker(){const m=document.getElementById('amtScaleDatePicker');if(m){m.classList.add('hidden');m.classList.remove('flex');}activeDatePicker=null;}
   function drawScaleDatePicker(){const modal=document.getElementById('amtScaleDatePicker');if(!modal||!activeDatePicker)return;const which=activeDatePicker.which;const startKey=document.getElementById(activeDatePicker.monthId).value;let minMonth=startKey,maxMonth=startKey;if(which==='custom'){maxMonth=document.getElementById('customScaleEndMonth').value||startKey;}const [sy,sm]=startKey.split('-').map(Number),[ey,em]=maxMonth.split('-').map(Number);const min=new Date(sy,sm-1,1),max=new Date(ey,em-1,1);modal.querySelector('#amtPickerTitle').textContent=pickerMonth.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});modal.querySelector('#amtPickerPrev').disabled=pickerMonth<=min;modal.querySelector('#amtPickerNext').disabled=pickerMonth>=max;modal.querySelector('#amtPickerPrev').classList.toggle('opacity-30',pickerMonth<=min);modal.querySelector('#amtPickerNext').classList.toggle('opacity-30',pickerMonth>=max);const grid=modal.querySelector('#amtPickerDays');grid.innerHTML='';const first=new Date(pickerMonth.getFullYear(),pickerMonth.getMonth(),1),offset=first.getDay(),days=new Date(pickerMonth.getFullYear(),pickerMonth.getMonth()+1,0).getDate();for(let i=0;i<offset;i++)grid.appendChild(document.createElement('span'));for(let d=1;d<=days;d++){const key=pickerMonth.getFullYear()+'-'+String(pickerMonth.getMonth()+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');const b=document.createElement('button');b.type='button';b.textContent=d;b.className='rounded-lg py-2 text-sm '+(pickerSelected===key?'bg-amber-500 text-black font-extrabold':'bg-gray-50 dark:bg-gray-800');b.onclick=()=>{pickerSelected=key;drawScaleDatePicker();};grid.appendChild(b);}}
-  document.addEventListener('DOMContentLoaded',()=>{
-    addFeatureScreens();addThemePicker();addThemeMenu();enhanceScaleForms();installMonthPickerButtons();applyColorTheme(localStorage.getItem(THEME_KEY)||'graphite');
+  amtReady(async()=>{
+    addFeatureScreens();addThemePicker();addThemeMenu();enhanceScaleForms();installMonthPickerButtons();await applyColorTheme(amtStore.getItem(THEME_KEY)||'graphite');
     const originalMonthly=window.saveMonthlyScaleFromSettings,originalCustom=window.saveCustomScaleConfigSeparated;
-    if(typeof originalMonthly==='function')window.saveMonthlyScaleFromSettings=function(){const before=localStorage.getItem('amt_month_scales'),month=document.getElementById('monthlyScaleMonth').value,date=document.getElementById('monthlyScaleBaseDate').value,scale=document.getElementById('monthlyScaleType').value;originalMonthly();let saved=false;try{saved=JSON.parse(localStorage.getItem('amt_month_scales')||'[]').some(c=>c.startMonth===month&&c.endMonth===month&&c.baseDate===date&&c.scale===scale);}catch(_){}if(saved||localStorage.getItem('amt_month_scales')!==before)resetScaleSelectors();};
-    if(typeof originalCustom==='function')window.saveCustomScaleConfigSeparated=function(){const before=localStorage.getItem('amt_month_scales'),start=document.getElementById('customScaleStartMonth').value,end=document.getElementById('customScaleEndMonth').value,date=document.getElementById('customScaleBaseDate').value,scale=document.getElementById('customScaleType').value;originalCustom();let saved=false;try{saved=JSON.parse(localStorage.getItem('amt_month_scales')||'[]').some(c=>c.startMonth===start&&c.endMonth===end&&c.baseDate===date&&c.scale===scale);}catch(_){}if(saved||localStorage.getItem('amt_month_scales')!==before)resetScaleSelectors();};
-    const originalSave=window.saveDayModalData;if(typeof originalSave==='function')window.saveDayModalData=function(){const type=document.getElementById('modalExtraType')?.value,hours=document.getElementById('modalExtraHours')?.value;if(type==='hours'&&(!hours||Number(hours)<=0)){alert('Selecione a quantidade de horas extras.');return;}originalSave();setTimeout(()=>{if(typeof renderBankHours==='function')renderBankHours();},0);};
-    ['clearSpecificScaleMonth','clearAllScaleConfigs'].forEach(name=>{const fn=window[name];if(typeof fn==='function')window[name]=function(){fn();const e=document.getElementById('clearScaleMonth');if(e)updateMonthDisplay(e);};});
-    const oldToggle=window.toggleTheme;window.toggleTheme=function(){oldToggle();applyColorTheme(localStorage.getItem(THEME_KEY)||'graphite');};
+    if(typeof originalMonthly==='function')window.saveMonthlyScaleFromSettings=async function(){const before=amtStore.getItem('amt_month_scales'),month=document.getElementById('monthlyScaleMonth').value,date=document.getElementById('monthlyScaleBaseDate').value,scale=document.getElementById('monthlyScaleType').value;await originalMonthly();let saved=false;try{saved=JSON.parse(amtStore.getItem('amt_month_scales')||'[]').some(c=>c.startMonth===month&&c.endMonth===month&&c.baseDate===date&&c.scale===scale);}catch(_){}if(saved||amtStore.getItem('amt_month_scales')!==before)resetScaleSelectors();};
+    if(typeof originalCustom==='function')window.saveCustomScaleConfigSeparated=async function(){const before=amtStore.getItem('amt_month_scales'),start=document.getElementById('customScaleStartMonth').value,end=document.getElementById('customScaleEndMonth').value,date=document.getElementById('customScaleBaseDate').value,scale=document.getElementById('customScaleType').value;await originalCustom();let saved=false;try{saved=JSON.parse(amtStore.getItem('amt_month_scales')||'[]').some(c=>c.startMonth===start&&c.endMonth===end&&c.baseDate===date&&c.scale===scale);}catch(_){}if(saved||amtStore.getItem('amt_month_scales')!==before)resetScaleSelectors();};
+    const originalSave=window.saveDayModalData;if(typeof originalSave==='function')window.saveDayModalData=async function(){const type=document.getElementById('modalExtraType')?.value,hours=document.getElementById('modalExtraHours')?.value;if(type==='hours'&&(!hours||Number(hours)<=0)){alert('Selecione a quantidade de horas extras.');return;}await originalSave();setTimeout(()=>{if(typeof renderBankHours==='function')renderBankHours();},0);};
+    ['clearSpecificScaleMonth','clearAllScaleConfigs'].forEach(name=>{const fn=window[name];if(typeof fn==='function')window[name]=async function(){await fn();const e=document.getElementById('clearScaleMonth');if(e)updateMonthDisplay(e);};});
+    const oldToggle=window.toggleTheme;window.toggleTheme=async function(){await oldToggle();await applyColorTheme(amtStore.getItem(THEME_KEY)||'graphite');};
     setTimeout(()=>{['monthlyScaleMonth','monthlyScaleType','customScaleType','customScaleStartMonth','customScaleEndMonth','clearScaleMonth'].forEach(id=>{const e=document.getElementById(id);if(e){e.value='';if(e.tagName==='SELECT')updateMonthDisplay(e);}});['monthlyScaleBaseDate','customScaleBaseDate'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';const b=document.getElementById(id+'Display');if(b){b.textContent='Selecionar data';b.classList.add('text-gray-500');}});},0);
     document.getElementById('monthlyScaleMonth')?.addEventListener('change',()=>{const e=document.getElementById('monthlyScaleBaseDate');if(e)e.value='';const b=document.getElementById('monthlyScaleBaseDateDisplay');if(b){b.textContent='Selecionar data';b.classList.add('text-gray-500');}});
     document.getElementById('customScaleStartMonth')?.addEventListener('change',()=>{const e=document.getElementById('customScaleBaseDate');if(e)e.value='';const b=document.getElementById('customScaleBaseDateDisplay');if(b){b.textContent='Selecionar data';b.classList.add('text-gray-500');}});
@@ -2314,7 +2309,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
 })();
 </script>
 
-<script>
+<script type="text/plain" data-amt-app>
 (function(){
  const status = document.getElementById('amtOfflineStatus');
  function check(repair){
@@ -2323,13 +2318,31 @@ html[data-color-theme="blackMono"] .text-red-500 {
   const channel = new MessageChannel();
   status.textContent='Verificando recursos…';
   const timer = setTimeout(()=>{channel.port1.close();status.textContent='Sem resposta. Confira a versão e tente novamente.';},30000);
-  channel.port1.onmessage = e=>{clearTimeout(timer);channel.port1.close();const r=e.data;if(r.error || r.version!=='A5'){status.textContent='Diagnóstico indisponível nesta versão.';return;}status.textContent=r.missing.length ? 'Recursos ausentes: '+r.missing.join(', ') : r.total+' recursos presentes no cache. Confirme com um teste em modo avião.';};
+  channel.port1.onmessage = e=>{clearTimeout(timer);channel.port1.close();const r=e.data;if(r.error || r.version!=='S5'){status.textContent='Diagnóstico indisponível nesta versão.';return;}status.textContent=r.missing.length ? 'Recursos ausentes: '+r.missing.join(', ') : r.total+' recursos presentes no cache. Confirme com um teste em modo avião.';};
   worker.postMessage({type:'AMT_OFFLINE_CHECK',repair},[channel.port2]);
  }
  document.getElementById('amtOfflineCheck').onclick=()=>check(false);
  document.getElementById('amtOfflineRepair').onclick=()=>check(true);
  document.getElementById('amtOfflinePersist').onclick=async()=>{try{if(!navigator.storage || !navigator.storage.persist){status.textContent='Persistência não suportada.';return;}const granted=await navigator.storage.persist();status.textContent=granted?'Persistência concedida pelo navegador. Mantenha backups.':'Persistência não concedida pelo navegador.';}catch(e){status.textContent='Não foi possível solicitar persistência.';}};
 })();
+</script>
+<script>
+// S5: canonical IndexedDB, legacy source untouched, transactional restore.
+const amtReadyCallbacks=[],amtLoadCallbacks=[];
+const amtReady=fn=>amtReadyCallbacks.push(fn),amtLoaded=fn=>amtLoadCallbacks.push(fn);
+const amtStore=(()=>{
+ const NAME='amt_storage_s5'; let state=new Map(), revision=0, queue=Promise.resolve(), failed=false,pending=0,booting=true;
+ function open(name=NAME){return new Promise((resolve,reject)=>{const r=indexedDB.open(name,1);r.onupgradeneeded=()=>{const d=r.result;if(name===NAME){d.createObjectStore('kv');d.createObjectStore('meta');}d.createObjectStore('pdfs',{keyPath:'month'});};r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);r.onblocked=()=>reject(new Error('Banco bloqueado'));});}
+ function req(r){return new Promise((ok,no)=>{r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error);});}
+ function done(t){return new Promise((ok,no)=>{t.oncomplete=ok;t.onabort=()=>no(t.error||new Error('Transação cancelada'));t.onerror=()=>{};});}
+ async function read(){const d=await open();try{const t=d.transaction(['kv','pdfs','meta'],'readonly'), end=done(t);const [keys,values,pdfs,rev]=await Promise.all([req(t.objectStore('kv').getAllKeys()),req(t.objectStore('kv').getAll()),req(t.objectStore('pdfs').getAll()),req(t.objectStore('meta').get('revision'))]);await end;return {data:Object.fromEntries(keys.map((k,i)=>[k,values[i]])),pdfs,rev};}finally{d.close();}}
+ async function commit(changes,pdfs,expected,clear=false){const d=await open();try{const t=d.transaction(['kv','pdfs','meta'],'readwrite'),end=done(t),m=t.objectStore('meta'),k=t.objectStore('kv');let conflict=false;const r=m.get('revision');r.onsuccess=()=>{if(r.result!==expected){conflict=true;t.abort();return;}try{if(clear)k.clear();for(const [key,value] of changes){if(value===null)k.delete(key);else k.put(value,key);}if(pdfs!==null){const p=t.objectStore('pdfs');p.clear();for(const f of pdfs)p.put(f);}m.put((expected||0)+1,'revision');}catch(e){t.abort();}};try{await end;}catch(e){if(conflict)throw new Error('Dados alterados em outra janela; reabra o aplicativo.');throw e;}}finally{d.close();}}
+ async function init(){let r=await read();if(r.rev===undefined){const legacy={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('amt_'))legacy[k]=localStorage.getItem(k);}const d=await open('amt_paystubs_db');let pdfs;try{const t=d.transaction('pdfs','readonly'),end=done(t);pdfs=await req(t.objectStore('pdfs').getAll());await end;}finally{d.close();}let migrated=false;try{await commit(Object.entries(legacy),pdfs,undefined);migrated=true;}catch(e){if((await read()).rev===undefined)throw e;}r=await read();if(!r.rev)throw new Error('Migração não confirmada');if(migrated&&r.rev===1){if(Object.keys(r.data).length!==Object.keys(legacy).length||Object.entries(legacy).some(([k,v])=>r.data[k]!==v)||r.pdfs.length!==pdfs.length)throw new Error('Conferência da migração falhou');for(const f of pdfs){const copy=r.pdfs.find(x=>x.month===f.month);if(!copy||copy.name!==f.name||copy.blob.size!==f.blob.size)throw new Error('Conferência de PDF falhou');}}}state=new Map(Object.entries(r.data));revision=r.rev;}
+ function schedule(changes,pdfs=null,clear=false){pending++;document.body.inert=true;const job=queue.then(async()=>{if(failed)throw new Error('Armazenamento bloqueado');await commit(changes,pdfs,revision,clear);revision++;if(clear)state.clear();for(const [k,v] of changes){if(v===null)state.delete(k);else state.set(k,v);}});queue=job.catch(e=>{failed=true;console.error(e);document.body.inert=true;alert('Não foi possível confirmar a gravação. Reabra o aplicativo para recuperar o último estado salvo. '+e.message);}).finally(()=>{pending--;if(!pending&&!failed&&!booting)document.body.inert=false;});return job;}
+ return {init,finishBoot:()=>{booting=false;if(!pending&&!failed)document.body.inert=false;},open:()=>open(),getItem:k=>state.get(k)??null,key:i=>[...state.keys()][i]??null,get length(){return state.size;},setItem:(k,v)=>schedule([[k,String(v)]]),removeItem:k=>schedule([[k,null]]),restore:(data,pdfs)=>schedule(Object.entries(data),pdfs),reset:()=>schedule([],null,true),snapshot:async()=>{await queue;if(failed)throw new Error('Gravação não confirmada');return read();},hash:async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),x=>x.toString(16).padStart(2,'0')).join('')};
+})();
+(async()=>{document.body.inert=true;try{await amtStore.init();for(const source of document.querySelectorAll('script[data-amt-app]')){const script=document.createElement('script');script.textContent=source.textContent;source.after(script);}if(typeof renderApp!=='function'||typeof window.amtBackupPDFs?.read!=='function'||amtReadyCallbacks.length!==2)throw new Error('Inicialização incompleta');for(const fn of amtReadyCallbacks)await fn();if(window.amtAppLoad)await window.amtAppLoad();for(const fn of amtLoadCallbacks)fn();amtStore.finishBoot();}catch(e){console.error(e);alert('Não foi possível iniciar o armazenamento S5. Os dados originais não foram apagados. '+e.message);}})();
+
 </script>
 </body>
 </html>
