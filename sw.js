@@ -1,4 +1,5 @@
-const CACHE_NAME = 'amt-eusebio-v12-bank-holidays-reports-restore-r1-offline-t3';
+const CACHE_NAME = 'amt-eusebio-v12-bank-holidays-reports-restore-r1-offline-t4';
+const PDF_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
 const TAILWIND_URL = 'https://cdn.tailwindcss.com/';
 const FA_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/';
 const FA_ASSETS = ['css/all.min.css', 'webfonts/fa-solid-900.woff2', 'webfonts/fa-regular-400.woff2', 'webfonts/fa-brands-400.woff2', 'webfonts/fa-v4compatibility.woff2'].map(path => FA_BASE + path);
@@ -42,6 +43,10 @@ self.addEventListener('install', event => {
       await cache.put(url, response);
     }));
     await cache.put(FONT_CSS, fontCSS);
+    const pdfRequest = new Request(PDF_URL, {mode: 'no-cors', cache: 'reload'});
+    const pdfResponse = await fetch(pdfRequest);
+    if (!pdfResponse.ok && pdfResponse.type !== 'opaque') throw new Error('jsPDF unavailable');
+    await cache.put(PDF_URL, pdfResponse);
     await self.skipWaiting();
   })());
 });
@@ -58,13 +63,13 @@ self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
-  if (url.href === TAILWIND_URL) {
+  if (url.href === TAILWIND_URL || url.href === PDF_URL) {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
-      const cached = await cache.match(TAILWIND_URL);
+      const cached = await cache.match(url.href);
       if (cached) return cached;
       const response = await fetch(request);
-      if (response.ok || response.type === 'opaque') await cache.put(TAILWIND_URL, response.clone());
+      if (response.ok || response.type === 'opaque') await cache.put(url.href, response.clone());
       return response;
     })());
     return;
