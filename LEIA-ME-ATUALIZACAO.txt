@@ -1,5 +1,4 @@
-ESCALA AMT EUSÉBIO — V13.3 (2026.11.27)
-Base: V13.2. Atualização candidata para avaliação mobile.
-Faça backup completo antes de publicar. Extraia e substitua os arquivos na raiz do repositório existente, sem apagar dados do navegador. Aguarde a atualização do GitHub Pages e do service worker.
-Inclui equipe MOTO, ajuste de cabeçalho, transições, botão Hoje contextual, seletor Mês/Ano por gesto, seleção de período por rolagem e status operacional compacto.
-Validação: sintaxe JavaScript, IDs HTML e integridade ZIP. Teste funcional em navegador bloqueado pelo ambiente; validar em iPhone/Android antes de disponibilizar a todos. Perfis antigos incompatíveis devem ser revisados na edição; textos personalizados extremos podem exigir redução da fonte. Feedback tátil depende do dispositivo.
+ESCALA AMT EUSÉBIO — V13.4 (2026.11.27)
+Base: V13.3. Versão para teste. Faça backup completo antes de publicar. Extraia e substitua os arquivos na raiz do repositório existente, sem apagar dados do navegador.
+Inclui altura estável do status, ajustes manuais do cabeçalho com prévia e backup no perfil, retirada da admissão apenas do cabeçalho, indicador circular e seletor 2012 até ano atual + 10. Registros fora do intervalo não são excluídos.
+Validação estática: JavaScript, IDs HTML e ZIP. Teste visual e funcional em celular ainda necessário. Textos personalizados extremos podem exigir redução automática da fonte.

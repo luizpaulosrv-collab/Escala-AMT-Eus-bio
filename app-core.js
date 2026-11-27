@@ -704,7 +704,7 @@
                 countdownTitle.innerText = nextShift && nextShift.reason === 'extra' ? 'Plantão Extra em' : nextShift && nextShift.reason === 'swap' ? 'Troca de Plantão em' : 'Próximo Plantão';
             }
 
-            statusBadge.className='amt-operational-status';statusBadge.dataset.state=activeShift?'duty':'off';
+            statusBadge.className='amt-operational-status';statusBadge.dataset.state=activeShift?'duty':'off';const panel=document.getElementById('headerShiftPanel');panel.dataset.state=statusBadge.dataset.state;let progress=0;if(activeShift)progress=(now-activeShift.startTime)/(activeShift.endTime-activeShift.startTime);else if(nextShift){for(let offset=0;offset>=-730;offset--){const d=new Date(today);d.setDate(d.getDate()+offset);if(!getWorkReason(d))continue;const end=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1,6);if(end<=now){progress=(now-end)/(nextShift.startTime-end);break;}}}document.getElementById('amtRingProgress').setAttribute('stroke-dasharray',`${Math.max(0,Math.min(1,progress||0))*169.646} 170`);
             dateDisplay.textContent=targetTime?targetTime.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'})+' • '+targetTime.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'Nenhum plantão previsto';
             if(mode==='date')return;
             if (!targetTime) {
