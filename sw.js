@@ -1,8 +1,67 @@
-const CACHE_NAME='amt-eusebio-2026.11.27-13.7.1';
-const APP_SHELL=['./','./index.html','./privacidade.html','./termos.html','./storage.js','./boot.js','./pin.js','./app-core.js','./app-features.js','./backup.js','./cloud.js','./updates.js','./settings-nav.js','./operational.js','./mobile.js','./v135.js','./version.json','./fundo-amt.jpeg','./welcome-amt.jpg','./brasao-amt-oficial.jpeg','./brasao-AMT-vetorizado.svg','./manifest.webmanifest','./apple-touch-icon.png','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png','./icons/icon-180.png','./vendor/tailwind.css','./vendor/icons.js','./vendor/pdf-local.js','./offline-status.js'];
-const VERSION=CACHE_NAME.slice('amt-eusebio-'.length);
-async function info(){const c=await caches.open(CACHE_NAME);const missing=[];for(const path of APP_SHELL)if(!await c.match(path))missing.push(path);return {version:VERSION,ready:!missing.length,missing};}
-self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(CACHE_NAME);try{await c.addAll(APP_SHELL.map(x=>new Request(x,{cache:'reload'})));const v=await (await c.match('./version.json')).json();for(const path of APP_SHELL.filter(x=>x!=='./version.json'&&x!=='./')){const bytes=await (await c.match(path)).arrayBuffer();const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');if(v.hashes?.[path]!==hash)throw Error('Arquivo divergente: '+path);}const js=await (await c.match('./updates.js')).text();if(v.version!==VERSION||!js.includes("const AMT_VERSION='"+VERSION+"'"))throw Error('Publicação inconsistente');}catch(e){await caches.delete(CACHE_NAME);throw e;}})()));
-self.addEventListener('activate',e=>e.waitUntil((async()=>{const meta=await caches.open('amt-release-selection');await meta.put(new URL('./__release',self.location.href),new Response(CACHE_NAME));await self.clients.claim();})()));
-self.addEventListener('message',e=>{const t=e.data?.type;if(t==='SKIP_WAITING')e.waitUntil(self.skipWaiting());if(t==='AMT_SELECT_RELEASE')e.waitUntil((async()=>{e.ports[0]?.postMessage(true);})());if(t==='AMT_RELEASE_INFO'||t==='AMT_OFFLINE_STATUS')e.waitUntil(info().then(x=>e.ports[0]?.postMessage(x)));});
-self.addEventListener('fetch',e=>{const r=e.request,u=new URL(r.url);if(r.method!=='GET'||u.origin!==self.location.origin||u.pathname.endsWith('/version.json'))return;e.respondWith((async()=>{const c=await caches.open(CACHE_NAME);if(r.mode==='navigate'){if(/\/(privacidade|termos)\.html$/.test(u.pathname))return await c.match(r,{ignoreSearch:true})||fetch(r);return await c.match('./index.html')||fetch(r);}return await c.match(r)||fetch(r);})());});
+const CACHE_NAME = 'amt-eusebio-v12-bank-holidays-reports';
+const APP_SHELL = [
+  './',
+  './index.html',
+  './fundo-amt.jpeg',
+  './manifest.webmanifest',
+  './apple-touch-icon.png',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/icon-maskable-512.png',
+  './icons/icon-180.png'
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    // Each path is relative to this service worker, including GitHub Pages project sites.
+    await cache.addAll(APP_SHELL);
+    await self.skipWaiting();
+  })());
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(key => key.includes('eusebio') && key !== CACHE_NAME).map(key => caches.delete(key)));
+    await self.clients.claim();
+  })());
+});
+
+self.addEventListener('fetch', event => {
+  const request = event.request;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+
+  if (request.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        const response = await fetch(request);
+        if (response && response.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put('./index.html', response.clone());
+        }
+        return response;
+      } catch (_) {
+        return (await caches.match(request)) || (await caches.match('./index.html'));
+      }
+    })());
+    return;
+  }
+
+  event.respondWith((async () => {
+    const cached = await caches.match(request);
+    if (cached) return cached;
+    try {
+      const response = await fetch(request);
+      if (response && response.ok) {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(request, response.clone());
+      }
+      return response;
+    } catch (_) {
+      return new Response('', {status: 503, statusText: 'Offline'});
+    }
+  })());
+});
