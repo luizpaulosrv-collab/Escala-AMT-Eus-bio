@@ -321,6 +321,7 @@
             }
             calculateMonthlyStats();
             if(typeof renderHolidayList==='function')renderHolidayList();
+            window.amtMobileRefresh?.();
         }
 
         function switchView(view) {
@@ -356,8 +357,7 @@
             }
         }
 
-        function renderMonthGrid() {
-            const grid = document.getElementById('monthGrid');
+        function renderMonthGrid(grid = document.getElementById('monthGrid')) {
             grid.innerHTML = '';
 
             const year = currentDate.getFullYear();
@@ -499,8 +499,7 @@
             return cell;
         }
 
-        function renderYearGrid() {
-            const container = document.getElementById('yearView');
+        function renderYearGrid(container = document.getElementById('yearView')) {
             container.innerHTML = '';
 
             const currentYear = currentDate.getFullYear();
@@ -532,7 +531,7 @@
 
                     const holiday=getHolidayForDate(thisDate);
                     daysGridHtml += `
-                        <div data-date="${currentYear}-${String(monthIdx + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}" class="year-day-cell h-6 w-full flex items-center justify-center text-[10px] rounded-md cursor-pointer select-none touch-manipulation hover:opacity-80 transition ${bg}" title="${holiday?holiday.name:''}">
+                        <div data-date="${currentYear}-${String(monthIdx + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}" class="${thisDate.toDateString()===new Date().toDateString()?'amt-year-today':''} year-day-cell h-6 w-full flex items-center justify-center text-[10px] rounded-md cursor-pointer select-none touch-manipulation hover:opacity-80 transition ${bg}" title="${holiday?holiday.name:''}">
                             <span class="${holiday&&!holiday.optional?'holiday-number':''}">${day}</span>
                         </div>
                     `;
@@ -656,7 +655,7 @@
             document.getElementById('headerShiftPanel').hidden=!showStatus&&mode==='none';
             statusBadge.hidden=!showStatus;countdownTitle.hidden=mode==='none';
             document.getElementById('headerCountdownDigits').hidden=mode!=='countdown';
-            const dateDisplay=document.getElementById('headerNextDate');dateDisplay.hidden=mode!=='date';
+            const dateDisplay=document.getElementById('headerNextDate');dateDisplay.hidden=mode==='none';document.getElementById('headerShiftPanel').dataset.mode=mode;
             if(!showStatus&&mode==='none')return;
             const countdownFields = ['cdDays', 'cdHours', 'cdMins', 'cdSecs'];
             const shiftHours = 24;
@@ -705,10 +704,9 @@
                 countdownTitle.innerText = nextShift && nextShift.reason === 'extra' ? 'Plantão Extra em' : nextShift && nextShift.reason === 'swap' ? 'Troca de Plantão em' : 'Próximo Plantão';
             }
 
-            if(mode==='date'){
-                if(activeShift){for(let offset=0;offset<=730;offset++){const d=new Date(today);d.setDate(d.getDate()+offset);const start=new Date(d.getFullYear(),d.getMonth(),d.getDate(),6);if(start>now&&getWorkReason(d)){nextShift={startTime:start};break;}}}
-                countdownTitle.innerText='Próximo Plantão';dateDisplay.textContent=nextShift?nextShift.startTime.toLocaleDateString('pt-BR'):'Nenhum plantão previsto';return;
-            }
+            statusBadge.className='amt-operational-status';statusBadge.dataset.state=activeShift?'duty':'off';
+            dateDisplay.textContent=targetTime?targetTime.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'})+' • '+targetTime.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'Nenhum plantão previsto';
+            if(mode==='date')return;
             if (!targetTime) {
                 countdownFields.forEach(id => { const el = document.getElementById(id); if (el) el.innerText = '00'; });
                 statusText.innerText = 'SEM PLANTÃO PREVISTO';

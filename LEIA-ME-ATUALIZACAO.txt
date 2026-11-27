@@ -1,4 +1,5 @@
-ESCALA AMT EUSÉBIO — V12.1 (versão de teste)
-Base: V12.0. Menu principal à esquerda com sete categorias, animação de 650 ms, calendário de segunda a domingo e feriados em vermelho puro. Banco de horas e contracheques em Financeiro. Menu direito ainda não definido.
-Antes de atualizar, faça backup completo na versão instalada. Publique os arquivos mantendo a mesma origem e caminho do aplicativo. Não limpe os dados do navegador. O service worker tem nova versão de cache.
-Validação: sintaxe JavaScript e estrutura HTML verificadas; teste em navegador bloqueado pelo ambiente. Testar em iPhone, Android e desktop antes de publicação geral.
+ESCALA AMT EUSÉBIO — V13.3 (2026.11.27)
+Base: V13.2. Atualização candidata para avaliação mobile.
+Faça backup completo antes de publicar. Extraia e substitua os arquivos na raiz do repositório existente, sem apagar dados do navegador. Aguarde a atualização do GitHub Pages e do service worker.
+Inclui equipe MOTO, ajuste de cabeçalho, transições, botão Hoje contextual, seletor Mês/Ano por gesto, seleção de período por rolagem e status operacional compacto.
+Validação: sintaxe JavaScript, IDs HTML e integridade ZIP. Teste funcional em navegador bloqueado pelo ambiente; validar em iPhone/Android antes de disponibilizar a todos. Perfis antigos incompatíveis devem ser revisados na edição; textos personalizados extremos podem exigir redução da fonte. Feedback tátil depende do dispositivo.
