@@ -328,21 +328,15 @@
             const btnMonth = document.getElementById('btnViewMonth');
             const btnYear = document.getElementById('btnViewYear');
 
-            if (view === 'month') {
-                btnMonth.className = "flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-semibold transition bg-[#F8F5ED] dark:bg-[#211F1B] text-gray-900 dark:text-white shadow-sm";
-                btnYear.className = "flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-semibold transition text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white";
-            } else {
-                btnYear.className = "flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-semibold transition bg-[#F8F5ED] dark:bg-[#211F1B] text-gray-900 dark:text-white shadow-sm";
-                btnMonth.className = "flex-1 sm:flex-none px-5 py-2 rounded-lg text-sm font-semibold transition text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white";
-            }
+            btnMonth.setAttribute('aria-pressed',String(view==='month'));btnYear.setAttribute('aria-pressed',String(view==='year'));
             renderApp();
         }
 
         function navigateDate(offset) {
             if (currentView === 'month') {
-                currentDate.setMonth(currentDate.getMonth() + offset);
+                currentDate = new Date(currentDate.getFullYear(),currentDate.getMonth()+offset,1);
             } else {
-                currentDate.setFullYear(currentDate.getFullYear() + offset);
+                currentDate = new Date(currentDate.getFullYear()+offset,currentDate.getMonth(),1);
             }
             renderApp();
         }
