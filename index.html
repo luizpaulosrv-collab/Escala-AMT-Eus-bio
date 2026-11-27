@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Escala AMT 1.0</title>
+    <title>Escala AMT Eusébio</title>
     <meta name="theme-color" content="#1e1e24">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -17,33 +17,11 @@
     <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 
 <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        amt: {
-                            yellow: '#FFC107',
-                            yellowDark: '#D99B00',
-                            black: '#121212',
-                            cardDark: '#1E1E24',
-                            accentBlue: '#2563EB',
-                            duty: '#1D4ED8',
-                            off: '#374151',
-                            extra50: '#F59E0B',
-                            extra100: '#EF4444'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="./vendor/tailwind.css">
     <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>window.FontAwesomeConfig={autoReplaceSvg:"nest",observeMutations:true};</script><script defer src="./vendor/icons.js"></script>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
+    
     <style>
         html { width:100%; min-height:100%; overflow-x:hidden; -webkit-text-size-adjust:100%; }
         /* Corrige a área segura do iOS quando o app é aberto pela Tela de Início.
@@ -55,7 +33,7 @@
         }
         body {
             width:100%; max-width:100%; min-height:100vh; margin:0; overflow-x:hidden;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             -webkit-tap-highlight-color: transparent;
             position: relative;
             isolation: isolate;
@@ -751,7 +729,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
     </div>
 
     <!-- Biblioteca para gerar relatórios PDF localmente no navegador -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="./vendor/pdf-local.js"></script>
     <!-- JAVASCRIPT DE LÓGICA E INTERAÇÃO -->
 <style>
 .agent-avatar-button{position:relative;flex-shrink:0;display:block;background:none;border:0;padding:0;cursor:pointer;color:inherit}.agent-avatar-pencil{position:absolute;bottom:4px;right:4px;border-radius:50%;width:27px;height:27px;display:grid;place-items:center;background:var(--amt-header-light,#eee);border:1px solid currentColor;color:#333;font-size:17px}.dark .agent-avatar-pencil{background:var(--amt-header-dark,#222);color:#eee}.agent-image-dialog{color:#222;background:var(--amt-header-light,#fff);border:1px solid var(--amt-header-border-light,#ccc);border-radius:20px;padding:20px;width:min(94vw,440px);max-height:85dvh;overflow:auto}.dark .agent-image-dialog{color:#eee;background:var(--amt-header-dark,#111);border-color:var(--amt-header-border-dark,#444)}.agent-image-dialog::backdrop{background:#0009}.agent-image-sheet{margin:auto auto 0; padding-bottom:calc(20px + env(safe-area-inset-bottom));}.agent-image-dialog button{display:block;width:100%;text-align:left;padding:12px;border-bottom:1px solid #8885;color:inherit;background:transparent}.agent-image-dialog button[hidden]{display:none}.agent-image-dialog h2{font-weight:800;font-size:1.15rem;margin:12px 0}.agent-image-dialog label{display:block;margin:10px 0}.agent-image-dialog input[type=range]{width:100%;accent-color:currentColor}.agent-quick-preview{width:84px;height:84px;object-fit:contain;margin:auto}.agent-quick-preview.is-photo{object-fit:cover;border-radius:50%}.agent-crop-canvas{width:min(100%,260px);height:auto;aspect-ratio:1;border-radius:50%;margin:auto;display:block}.agent-view-photo{max-width:100%;max-height:60vh;object-fit:contain;margin:auto}
@@ -769,5 +747,6 @@ html[data-color-theme="blackMono"] .text-red-500 {
 <style id="amt134">
 #agentHeaderImage{width:var(--amt-fit-avatar,90px)!important;height:var(--amt-fit-avatar,90px)!important;object-fit:contain}#agentHeaderImage.rounded-full{object-fit:cover}#profileTextColumn{min-width:0}#profileTextColumn p{white-space:nowrap}#amtStatusSlot{height:88px;display:flex;align-items:center;justify-content:flex-start;flex-shrink:0}#headerShiftPanel{display:flex!important;align-items:center;gap:9px;width:max-content!important;max-width:100%!important;margin:0!important;padding:8px 10px!important;background:color-mix(in srgb,currentColor 4%,transparent)!important;border:1px solid color-mix(in srgb,currentColor 16%,transparent)!important;border-radius:16px!important;box-shadow:none!important}#headerShiftPanel[hidden]{display:none!important}#headerShiftPanel>div.amt-status-content{display:flex!important;flex-direction:column;gap:3px;min-width:0}#amtStatusRing{width:46px;height:46px;flex:none;color:#16803d}#headerShiftPanel[data-state=duty] #amtStatusRing{color:#b77908}.dark #amtStatusRing{color:#4ade80}.dark #headerShiftPanel[data-state=duty] #amtStatusRing{color:#fbbf24}html[data-color-theme="blackMono"] #amtStatusRing{color:inherit!important}#headerCountdownDigits{display:flex;gap:6px;font-size:18px;line-height:1.15;font-family:inherit;white-space:nowrap} #headerCountdownDigits>span{display:inline-flex;align-items:baseline}#headerCountdownDigits b{font-weight:650;font-variant-numeric:tabular-nums}#headerCountdownDigits small{font-size:10px;opacity:.65;margin-left:1px}.amt-status-date{display:flex;gap:4px;flex-wrap:wrap;font-size:10px;line-height:1.15}#headerNextDate{font-size:10px;font-weight:400}#headerShiftPanel[data-mode=none] #amtStatusRing{width:24px;height:24px}#headerShiftPanel[data-mode=none] .amt-status-date{display:none}#headerShiftPanel [hidden]{display:none!important}.amt-visual-preview{display:flex;align-items:center;gap:12px;min-height:132px;overflow:hidden}.amt-visual-preview img{width:var(--amt-fit-avatar,90px);height:var(--amt-fit-avatar,90px);object-fit:contain;flex:none}.amt-visual-preview img.rounded-full{object-fit:cover}.amt-visual-preview strong{font-size:var(--amt-name-size,20px);white-space:nowrap}.amt-visual-preview strong+div{font-size:var(--amt-detail-size,14px);white-space:nowrap}.amt-visual-label{display:block;font-size:13px}.amt-visual-label output{float:right}.amt-visual-label input{display:block;width:100%;accent-color:currentColor;margin:10px 0}
 #calendarPeriodDialog{border-radius:28px 28px 0 0!important;border:1px solid color-mix(in srgb,currentColor 18%,transparent)!important;background:color-mix(in srgb,var(--amt-sheet-bg,#f4f4f4) 92%,transparent)!important;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 -8px 40px #0003!important}.dark #calendarPeriodDialog{--amt-sheet-bg:#202023}html[data-color-theme="blackMono"] #calendarPeriodDialog{--amt-sheet-bg:#101010}.amt-sheet-handle{width:34px;height:4px;border-radius:99px;background:currentColor;opacity:.35;margin:0 auto 16px}#calendarPeriodForm h2{text-align:center;font-size:20px;font-weight:650}.amt-wheels{position:relative;gap:0!important;margin:16px 0!important}.amt-wheels:before{content:"";position:absolute;left:0;right:0;top:calc(100% / 2 - 20px);height:40px;background:color-mix(in srgb,currentColor 9%,transparent);border-radius:14px;pointer-events:none}.amt-wheels label{display:none!important}.amt-wheel{background:none!important;border:0!important;mask-image:linear-gradient(transparent,#000 35%,#000 65%,transparent);-webkit-mask-image:linear-gradient(transparent,#000 35%,#000 65%,transparent)}.amt-wheel button{border-radius:0!important;box-shadow:none!important;font-size:17px!important}.amt-wheel button.selected{font-size:20px!important;font-weight:650!important}.amt-wheel-actions button{border-radius:999px!important;min-height:46px!important;border:0!important}.amt-wheel-actions button:first-child{background:color-mix(in srgb,currentColor 8%,transparent)!important;color:inherit!important}@media(max-width:350px){#headerCountdownDigits{font-size:16px;gap:4px}#amtStatusRing{width:38px;height:38px}}
-</style></body>
+</style><script src="./offline-status.js"></script>
+</body>
 </html>
