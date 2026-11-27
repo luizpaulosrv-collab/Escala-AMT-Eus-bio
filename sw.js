@@ -1,4 +1,4 @@
-const CACHE_NAME = 'amt-eusebio-v12-bank-holidays-reports';
+const CACHE_NAME = 'amt-eusebio-v12-bank-holidays-reports-restore-r1';
 const APP_SHELL = [
   './',
   './index.html',

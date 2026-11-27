@@ -525,7 +525,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
               <div id="backupSettings" class="config-only-tools hidden border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
                 <h4 class="font-semibold text-sm text-gray-800 dark:text-gray-200"><i class="fa-solid fa-database text-amber-600 mr-1"></i> Backup e restauração</h4>
                 <p class="text-xs text-gray-500 dark:text-gray-400">Exporte um único arquivo ZIP com escalas, configurações, banco de horas, pagamentos, temas e todos os contracheques em PDF. Guarde-o em local seguro; a restauração recupera esses dados neste dispositivo.</p>
-                <div class="flex flex-wrap gap-2"><button onclick="exportBackup()" class="px-3 py-2 rounded-lg bg-amber-500 text-black font-bold text-sm"><i class="fa-solid fa-download mr-1"></i> Exportar backup</button><label class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer text-sm font-semibold"><i class="fa-solid fa-upload mr-1"></i> Restaurar backup<input id="backupFile" type="file" accept=".zip,application/zip,application/x-zip-compressed,application/json,.json" onchange="importBackup(event)" class="hidden"></label></div>
+                <div class="flex flex-wrap gap-2"><button onclick="exportBackup()" class="px-3 py-2 rounded-lg bg-amber-500 text-black font-bold text-sm"><i class="fa-solid fa-download mr-1"></i> Exportar backup</button><span class="text-xs text-gray-500">Restauração corrigida R1</span><label class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer text-sm font-semibold"><i class="fa-solid fa-upload mr-1"></i> Restaurar backup<input id="backupFile" type="file" accept=".zip,application/zip,application/x-zip-compressed,application/json,.json" onchange="importBackup(event)" class="hidden"></label></div>
               </div>
 
         </section>
@@ -1972,7 +1972,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
             }
             return out;
         }
-        async function getPaystubRecords(){return await dbAll();}
+        async function getPaystubRecords(){return await window.amtBackupPDFs.read();}
         window.exportBackup=async function(){
             try{
                 const appData={};for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key&&key.startsWith('amt_'))appData[key]=localStorage.getItem(key);}
@@ -1985,19 +1985,22 @@ html[data-color-theme="blackMono"] .text-red-500 {
         };
         window.importBackup=async function(event){
             const input=event.target,file=input.files&&input.files[0];if(!file)return;
-            const isZip=file.name.toLowerCase().endsWith('.zip')||file.type.includes('zip');
+            let isZip=false,stage='leitura do arquivo';
             try{
+                const buffer=await file.arrayBuffer();
+                const signature=new Uint8Array(buffer,0,Math.min(4,buffer.byteLength));
+                isZip=signature[0]===80&&signature[1]===75;
                 let data,restored={},pdfRecords=[];
                 if(isZip){
-                    const entries=readStoredZip(await file.arrayBuffer());if(!entries['backup.json'])throw new Error('O ZIP não contém backup.json.');
+                    const entries=readStoredZip(buffer);if(!entries['backup.json'])throw new Error('O ZIP não contém backup.json.');
                     data=JSON.parse(zipTextDecoder.decode(entries['backup.json']));if(data.format!=='escala-amt-backup-zip'||!Array.isArray(data.paystubs))throw new Error('Formato de backup ZIP não reconhecido.');
                     if(!data.data||typeof data.data!=='object'||Array.isArray(data.data))throw new Error('Dados do backup inválidos.');
                     Object.entries(data.data).forEach(([k,v])=>{if(k.startsWith('amt_'))restored[k]=typeof v==='string'?v:JSON.stringify(v);});
                     for(const item of data.paystubs){if(!item||typeof item.month!=='string'||typeof item.path!=='string'||!entries[item.path])throw new Error('Contracheque ausente ou inválido no ZIP.');const bytes=entries[item.path];pdfRecords.push({month:item.month,name:item.name||`contracheque-${item.month}.pdf`,type:'application/pdf',blob:new Blob([bytes],{type:'application/pdf'}),updatedAt:item.updatedAt||new Date().toISOString()});}
                 }else{
                     // Compatibilidade com backups JSON antigos: eles não contêm PDFs.
-                    data=JSON.parse(await file.text());if(!data||typeof data!=='object'||Array.isArray(data))throw new Error('JSON inválido');
-                    if(data.format&&data.format!=='escala-amt-backup')throw new Error('Formato de backup não reconhecido');
+                    data=JSON.parse(zipTextDecoder.decode(buffer));if(!data||typeof data!=='object'||Array.isArray(data))throw new Error('JSON inválido');
+                    if(data.format&&!['escala-amt-backup','escala-amt-backup-zip'].includes(data.format))throw new Error('Formato de backup não reconhecido');
                     if(data.data&&typeof data.data==='object'&&!Array.isArray(data.data))Object.entries(data.data).forEach(([k,v])=>{if(k.startsWith('amt_'))restored[k]=typeof v==='string'?v:JSON.stringify(v);});
                     let ev=data.eventsData??data.amt_events_data,base=data.baseDutyDate??data.baseDate??data.baseDuty??data.amt_base_date;
                     if(typeof ev==='string'){try{ev=JSON.parse(ev)}catch(_){throw new Error('Registros inválidos')}}if(ev!==undefined){if(!ev||typeof ev!=='object'||Array.isArray(ev))throw new Error('Registros inválidos');restored.amt_events_data=JSON.stringify(ev);}if(typeof base==='string'&&base)restored.amt_base_date=base;if(data.theme)restored.amt_theme=String(data.theme);
@@ -2006,16 +2009,15 @@ html[data-color-theme="blackMono"] .text-red-500 {
                 ['amt_events_data','amt_agent_profile_v35','amt_month_scales','amt_bank_payments_v1'].forEach(k=>{if(restored[k]!==undefined){const v=JSON.parse(restored[k]);if(v===null||typeof v!=='object')throw new Error('Campo inválido: '+k);}});
                 const pdfNote=isZip?`\nContracheques que serão restaurados: ${pdfRecords.length}`:'\nAtenção: este backup JSON antigo não contém contracheques. Os PDFs já existentes neste dispositivo serão preservados.';
                 if(!confirm('A restauração substituirá os dados e configurações correspondentes deste aplicativo.'+pdfNote+'\nDeseja continuar?')){input.value='';return;}
+                stage='gravação dos registros';
                 const previous={};for(const k of Object.keys(restored))previous[k]=localStorage.getItem(k);
                 try{
                     Object.entries(restored).forEach(([k,v])=>localStorage.setItem(k,v));
-                    if(isZip){const db=await dbOpen();await new Promise((resolve,reject)=>{const tx=db.transaction('pdfs','readwrite'),store=tx.objectStore('pdfs');store.clear();pdfRecords.forEach(f=>store.put(f));tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Falha ao restaurar PDFs'));});db.close();}
+                    if(isZip){stage='gravação dos contracheques';await window.amtBackupPDFs.replace(pdfRecords);}
                 }catch(err){Object.entries(previous).forEach(([k,v])=>{try{if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(_){}});throw err;}
-                try{eventsData=JSON.parse(localStorage.getItem('amt_events_data')||'{}')}catch(_){eventsData={};}baseDutyDate=localStorage.getItem('amt_base_date')||'';
-                const baseInput=document.getElementById('settingsBaseDateInput');if(baseInput)baseInput.value=baseDutyDate;const profile=localStorage.getItem('amt_agent_profile_v35');if(profile){try{applyProfile(JSON.parse(profile))}catch(e){console.error(e)}}
-                let warn=false;[['renderApp',()=>renderApp()],['refreshManagementPanel',()=>refreshManagementPanel()],['renderSavedScaleConfigs',()=>renderSavedScaleConfigs()],['updateCountdown',()=>updateCountdown()]].forEach(([n,fn])=>{try{fn()}catch(e){warn=true;console.error(n,e)}});
-                alert(warn?'Backup restaurado. Alguns elementos podem precisar ser atualizados ao reabrir o aplicativo.':'Backup restaurado com sucesso! Escalas, configurações, banco de horas, pagamentos, temas e contracheques foram recuperados.');
-            }catch(e){console.error('Falha ao importar backup:',e);alert('Não foi possível restaurar este backup. '+(e&&e.message?e.message:'O arquivo pode estar inválido ou corrompido.')+' Nenhum PDF foi apagado.');}
+                alert('Backup restaurado com sucesso! '+Object.keys(JSON.parse(restored.amt_events_data||'{}')).length+' registros no calendário; '+pdfRecords.length+' PDFs importados. O aplicativo será recarregado.');
+                input.value='';location.reload();
+            }catch(e){console.error('Falha ao importar backup:',e);alert('Não foi possível restaurar este backup. Etapa: '+stage+'. '+(e?.message||String(e)));}
             input.value='';
         };
         async function resetAppData() {
@@ -2210,6 +2212,16 @@ html[data-color-theme="blackMono"] .text-red-500 {
   // Contracheques em IndexedDB: PDFs não ocupam o limite pequeno do localStorage.
   function dbOpen(){return new Promise((resolve,reject)=>{const req=indexedDB.open('amt_paystubs_db',1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('pdfs'))db.createObjectStore('pdfs',{keyPath:'month'});};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
   async function dbAll(){const db=await dbOpen();return new Promise((resolve,reject)=>{const r=db.transaction('pdfs','readonly').objectStore('pdfs').getAll();r.onsuccess=()=>{db.close();resolve(r.result||[])};r.onerror=()=>{db.close();reject(r.error)}})}
+  // Ponte explícita entre o módulo de backup e o banco privado de PDFs.
+  window.amtBackupPDFs=Object.freeze({read:dbAll,replace:async function(records){
+    const db=await dbOpen();
+    try{await new Promise((resolve,reject)=>{
+      const tx=db.transaction('pdfs','readwrite');
+      tx.oncomplete=resolve;tx.onabort=()=>reject(tx.error||new Error('Transação de PDFs cancelada'));
+      try{const store=tx.objectStore('pdfs');store.clear();for(const record of records)store.put(record);}
+      catch(error){try{tx.abort();}catch(_){}reject(error);}
+    });}finally{db.close();}
+  }});
   window.savePaystub=async function(input){const file=input.files&&input.files[0];if(!file)return;if(file.type!=='application/pdf'&&!file.name.toLowerCase().endsWith('.pdf')){alert('Selecione um arquivo PDF.');input.value='';return;}const month=document.getElementById('paystubMonth').value;if(!month){alert('Selecione o mês de referência do contracheque.');input.value='';return;}try{const db=await dbOpen();await new Promise((resolve,reject)=>{const tx=db.transaction('pdfs','readwrite');tx.objectStore('pdfs').put({month,name:file.name,type:'application/pdf',blob:file,updatedAt:new Date().toISOString()});tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close();input.value='';renderPaystubList();alert('Contracheque salvo neste dispositivo.');}catch(e){console.error(e);alert('Não foi possível salvar o PDF. Verifique o espaço disponível no dispositivo.');}};
   window.renderPaystubList=async function(){const root=document.getElementById('paystubList');if(!root)return;root.innerHTML='<p class="text-sm text-gray-500">Carregando contracheques...</p>';try{const files=await dbAll();root.innerHTML='';if(!files.length){root.innerHTML='<p class="text-sm text-gray-500">Nenhum contracheque salvo ainda.</p>';return;}files.sort((a,b)=>b.month.localeCompare(a.month)).forEach(f=>{const item=document.createElement('div');item.className='flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-gray-700 p-3';const [y,m]=f.month.split('-');const label=new Date(+y,+m-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});item.innerHTML=`<div class="min-w-0"><div class="font-bold capitalize">${label}</div><div class="text-xs text-gray-500 truncate">${f.name}</div></div><div class="flex flex-wrap gap-2"><button class="rounded-lg bg-sky-600 text-white px-3 py-2 text-xs font-bold">Visualizar</button><button class="rounded-lg bg-blue-600 text-white px-3 py-2 text-xs font-bold">Baixar PDF</button><button class="rounded-lg bg-red-100 text-red-700 px-3 py-2 text-xs font-bold">Excluir</button></div>`;item.querySelectorAll('button')[0].onclick=()=>{const url=URL.createObjectURL(f.blob);window.open(url,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(url),60000)};item.querySelectorAll('button')[1].onclick=()=>{const url=URL.createObjectURL(f.blob);const a=document.createElement('a');a.href=url;a.download=(f.name||`contracheque-${f.month}.pdf`).replace(/[\\/:*?"<>|]/g,'_');a.style.display='none';a.setAttribute('rel','noopener');document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000)};item.querySelectorAll('button')[2].onclick=async()=>{if(!confirm('Excluir o contracheque de '+label+'?'))return;const db=await dbOpen();await new Promise((resolve,reject)=>{const tx=db.transaction('pdfs','readwrite');tx.objectStore('pdfs').delete(f.month);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)});db.close();renderPaystubList();};root.appendChild(item);});}catch(e){console.error(e);root.innerHTML='<p class="text-sm text-red-600">Não foi possível acessar os PDFs salvos.</p>';}};
   function addFeatureScreens(){
