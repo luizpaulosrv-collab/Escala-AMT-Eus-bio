@@ -2,18 +2,7 @@
 <html lang="pt-BR" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <script>
-    /* Offline R3: keep installed iOS web apps inside the system safe viewport. */
-    (function () {
-        var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        var installed = navigator.standalone === true || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
-        if (ios && installed) {
-            document.documentElement.classList.add('amt-ios-standalone');
-            document.querySelector('meta[name="viewport"]').setAttribute('content', 'width=device-width, initial-scale=1.0, viewport-fit=contain');
-        }
-    })();
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=contain">
     <title>Escala AMT 1.0</title>
     <meta name="theme-color" content="#1e1e24">
     <meta name="mobile-web-app-capable" content="yes">
@@ -165,12 +154,19 @@ header.sticky > div { -webkit-backdrop-filter: none !important; backdrop-filter:
   header.sticky { top: env(safe-area-inset-top); }
 }
 </style>
-<style id="offline-r3-ios-safe-viewport">
-/* Only installed iOS: avoid applying the safe inset twice; keep content below the system bar. */
-html.amt-ios-standalone body { padding-top: env(safe-area-inset-top, 0px) !important; }
-html.amt-ios-standalone header.sticky { top: env(safe-area-inset-top, 0px) !important; }
-html.amt-ios-standalone body::after { top: env(safe-area-inset-top, 0px); }
-html.amt-ios-standalone header.sticky { isolation: isolate; }
+<style id="offline-r4-ios-safe-viewport">
+/* Installed iOS: keep document below native status bar; no sticky compositor at top. */
+@media (display-mode: standalone) {
+  @supports (-webkit-touch-callout: none) {
+    html { background-color: #F1EBDD !important; }
+    html.dark { background-color: #211F1B !important; }
+    html[data-color-theme] { background-color: var(--amt-header-light, #F1EBDD) !important; }
+    html.dark[data-color-theme] { background-color: var(--amt-header-dark, #211F1B) !important; }
+    body { padding-top: 0 !important; isolation: auto; -webkit-overflow-scrolling: auto; }
+    body::after { position: absolute; }
+    header.sticky { position: relative !important; top: auto !important; isolation: isolate; box-shadow: none !important; -webkit-backdrop-filter: none !important; backdrop-filter: none !important; }
+  }
+}
 </style>
 </head>
 <body class="bg-[#EEE8DC] dark:bg-[#171613] text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-300 pb-12">
@@ -533,7 +529,7 @@ html.amt-ios-standalone header.sticky { isolation: isolate; }
               <div id="backupSettings" class="config-only-tools hidden border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
                 <h4 class="font-semibold text-sm text-gray-800 dark:text-gray-200"><i class="fa-solid fa-database text-amber-600 mr-1"></i> Backup e restauração</h4>
                 <p class="text-xs text-gray-500 dark:text-gray-400">Exporte um único arquivo ZIP com escalas, configurações, banco de horas, pagamentos, temas e todos os contracheques em PDF. Guarde-o em local seguro; a restauração recupera esses dados neste dispositivo.</p>
-                <div class="flex flex-wrap gap-2"><button onclick="exportBackup()" class="px-3 py-2 rounded-lg bg-amber-500 text-black font-bold text-sm"><i class="fa-solid fa-download mr-1"></i> Exportar backup</button><span class="text-xs text-gray-500">Restauração corrigida R1 · Offline R3</span><label class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer text-sm font-semibold"><i class="fa-solid fa-upload mr-1"></i> Restaurar backup<input id="backupFile" type="file" accept=".zip,application/zip,application/x-zip-compressed,application/json,.json" onchange="importBackup(event)" class="hidden"></label></div>
+                <div class="flex flex-wrap gap-2"><button onclick="exportBackup()" class="px-3 py-2 rounded-lg bg-amber-500 text-black font-bold text-sm"><i class="fa-solid fa-download mr-1"></i> Exportar backup</button><span class="text-xs text-gray-500">Restauração corrigida R1 · Offline R4</span><label class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer text-sm font-semibold"><i class="fa-solid fa-upload mr-1"></i> Restaurar backup<input id="backupFile" type="file" accept=".zip,application/zip,application/x-zip-compressed,application/json,.json" onchange="importBackup(event)" class="hidden"></label></div>
               </div>
 
         </section>
