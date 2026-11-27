@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR" class="dark" data-amt-boot="pending">
 <head>
+    <style>html[data-amt-boot="pending"] body { visibility: hidden !important; }</style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Escala AMT 1.0</title>
@@ -168,7 +169,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
 <body class="bg-[#EEE8DC] dark:bg-[#171613] text-gray-800 dark:text-gray-100 min-h-screen transition-colors duration-300 pb-12">
 
 
-    <section id="welcomeScreen" class="welcome-screen fixed inset-0 z-[100] flex items-center justify-center p-5 overflow-y-auto text-white">
+    <section id="welcomeScreen" class="welcome-screen hidden fixed inset-0 z-[100] flex items-center justify-center p-5 overflow-y-auto text-white">
       <div class="w-full max-w-md rounded-3xl border border-white/25 bg-slate-950/55 backdrop-blur-sm shadow-2xl p-6 sm:p-8 text-center">
         <h1 class="mt-3 text-4xl sm:text-5xl font-black tracking-tight">ESCALA AMT</h1>
         <p class="mt-2 text-sm font-semibold text-amber-200">Desenvolvido por Agente Saraiva</p>
@@ -525,7 +526,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
               <div id="backupSettings" class="config-only-tools hidden border-t border-gray-200 dark:border-gray-700 pt-3 space-y-2">
                 <h4 class="font-semibold text-sm text-gray-800 dark:text-gray-200"><i class="fa-solid fa-database text-amber-600 mr-1"></i> Backup e restauração</h4>
                 <p class="text-xs text-gray-500 dark:text-gray-400">Exporte um único arquivo ZIP com escalas, configurações, banco de horas, pagamentos, temas e todos os contracheques em PDF. Guarde-o em local seguro; a restauração recupera esses dados neste dispositivo.</p>
-                <div class="flex flex-wrap gap-2"><button onclick="exportBackup()" class="px-3 py-2 rounded-lg bg-amber-500 text-black font-bold text-sm"><i class="fa-solid fa-download mr-1"></i> Exportar backup</button><span class="text-xs text-gray-500">Restauração corrigida R1 | Offline S5.1</span><div class="w-full space-y-2 text-xs"><button type="button" id="amtOfflineCheck" class="px-3 py-2 rounded-lg border border-gray-400">Verificar recursos offline</button> <button type="button" id="amtOfflineRepair" class="px-3 py-2 rounded-lg border border-gray-400">Recuperar recursos</button> <button type="button" id="amtOfflinePersist" class="px-3 py-2 rounded-lg border border-gray-400">Solicitar armazenamento persistente</button><p id="amtOfflineStatus" role="status" aria-live="polite"></p></div><label class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer text-sm font-semibold"><i class="fa-solid fa-upload mr-1"></i> Restaurar backup<input id="backupFile" type="file" accept=".zip,application/zip,application/x-zip-compressed,application/json,.json" onchange="importBackup(event)" class="hidden"></label></div>
+                <div class="flex flex-wrap gap-2"><button onclick="exportBackup()" class="px-3 py-2 rounded-lg bg-amber-500 text-black font-bold text-sm"><i class="fa-solid fa-download mr-1"></i> Exportar backup</button><span class="text-xs text-gray-500">Restauração corrigida R1 | Offline S5.2</span><div class="w-full space-y-2 text-xs"><button type="button" id="amtOfflineCheck" class="px-3 py-2 rounded-lg border border-gray-400">Verificar recursos offline</button> <button type="button" id="amtOfflineRepair" class="px-3 py-2 rounded-lg border border-gray-400">Recuperar recursos</button> <button type="button" id="amtOfflinePersist" class="px-3 py-2 rounded-lg border border-gray-400">Solicitar armazenamento persistente</button><p id="amtOfflineStatus" role="status" aria-live="polite"></p></div><label class="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 cursor-pointer text-sm font-semibold"><i class="fa-solid fa-upload mr-1"></i> Restaurar backup<input id="backupFile" type="file" accept=".zip,application/zip,application/x-zip-compressed,application/json,.json" onchange="importBackup(event)" class="hidden"></label></div>
               </div>
 
         </section>
@@ -2128,8 +2129,8 @@ html[data-color-theme="blackMono"] .text-red-500 {
  amtReady(function(){
    const p=JSON.parse(amtStore.getItem(PROFILE_KEY)||'null');
    if(p){applyProfile(p);document.getElementById('welcomeScreen').classList.add('hidden');}
-   if(typeof renderSavedScaleConfigs==='function')renderSavedScaleConfigs();
    else {document.getElementById('welcomeScreen').classList.remove('hidden');}
+   if(typeof renderSavedScaleConfigs==='function')renderSavedScaleConfigs();
    document.getElementById('dateJumpInput').value='';
    const nowMonth=new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0');
    if(document.getElementById('reportMonth')&&!document.getElementById('reportMonth').value)document.getElementById('reportMonth').value=nowMonth;
@@ -2318,7 +2319,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
   const channel = new MessageChannel();
   status.textContent='Verificando recursos…';
   const timer = setTimeout(()=>{channel.port1.close();status.textContent='Sem resposta. Confira a versão e tente novamente.';},30000);
-  channel.port1.onmessage = e=>{clearTimeout(timer);channel.port1.close();const r=e.data;if(r.error || r.version!=='S5'){status.textContent='Diagnóstico indisponível nesta versão.';return;}status.textContent=r.missing.length ? 'Recursos ausentes: '+r.missing.join(', ') : r.total+' recursos presentes no cache. Confirme com um teste em modo avião.';};
+  channel.port1.onmessage = e=>{clearTimeout(timer);channel.port1.close();const r=e.data;if(r.error || r.version!=='S5.2'){status.textContent='Diagnóstico indisponível nesta versão.';return;}status.textContent=r.missing.length ? 'Recursos ausentes: '+r.missing.join(', ') : r.total+' recursos presentes no cache. Confirme com um teste em modo avião.';};
   worker.postMessage({type:'AMT_OFFLINE_CHECK',repair},[channel.port2]);
  }
  document.getElementById('amtOfflineCheck').onclick=()=>check(false);
@@ -2341,7 +2342,7 @@ const amtStore=(()=>{
  function schedule(changes,pdfs=null,clear=false){pending++;document.body.inert=true;const job=queue.then(async()=>{if(failed)throw new Error('Armazenamento bloqueado');await commit(changes,pdfs,revision,clear);revision++;if(clear)state.clear();for(const [k,v] of changes){if(v===null)state.delete(k);else state.set(k,v);}});queue=job.catch(e=>{failed=true;console.error(e);document.body.inert=true;alert('Não foi possível confirmar a gravação. Reabra o aplicativo para recuperar o último estado salvo. '+e.message);}).finally(()=>{pending--;if(!pending&&!failed&&!booting)document.body.inert=false;});return job;}
  return {init,finishBoot:()=>{booting=false;if(!pending&&!failed)document.body.inert=false;},open:()=>open(),getItem:k=>state.get(k)??null,key:i=>[...state.keys()][i]??null,get length(){return state.size;},setItem:(k,v)=>schedule([[k,String(v)]]),removeItem:k=>schedule([[k,null]]),restore:(data,pdfs)=>schedule(Object.entries(data),pdfs),reset:()=>schedule([],null,true),snapshot:async()=>{await queue;if(failed)throw new Error('Gravação não confirmada');return read();},hash:async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),x=>x.toString(16).padStart(2,'0')).join('')};
 })();
-(async()=>{document.body.inert=true;let phase='armazenamento';try{await amtStore.init();phase='interface';for(const source of document.querySelectorAll('script[data-amt-app]')){const script=document.createElement('script');script.textContent=source.textContent;source.after(script);}if(typeof renderApp!=='function'||typeof window.amtBackupPDFs?.read!=='function'||amtReadyCallbacks.length!==2)throw new Error('Inicialização incompleta');for(const fn of amtReadyCallbacks)await fn();if(window.amtAppLoad)await window.amtAppLoad();for(const fn of amtLoadCallbacks)fn();amtStore.finishBoot();}catch(e){console.error(e);alert('Não foi possível iniciar '+(phase==='armazenamento'?'o armazenamento':'a interface')+' S5.1. Não refaça o cadastro nem apague os dados. '+e.message);}})();
+(async()=>{document.body.inert=true;let phase='armazenamento';try{await amtStore.init();phase='interface';for(const source of document.querySelectorAll('script[data-amt-app]')){const script=document.createElement('script');script.textContent=source.textContent;source.after(script);}if(typeof renderApp!=='function'||typeof window.amtBackupPDFs?.read!=='function'||amtReadyCallbacks.length!==2)throw new Error('Inicialização incompleta');for(const fn of amtReadyCallbacks)await fn();if(window.amtAppLoad)await window.amtAppLoad();for(const fn of amtLoadCallbacks)fn();amtStore.finishBoot();document.documentElement.removeAttribute('data-amt-boot');}catch(e){console.error(e);document.body.textContent='Não foi possível iniciar o aplicativo. Feche e reabra. Não apague os dados.';document.documentElement.removeAttribute('data-amt-boot');alert('Não foi possível iniciar '+(phase==='armazenamento'?'o armazenamento':'a interface')+' S5.2. Não refaça o cadastro nem apague os dados. '+e.message);}})();
 
 </script>
 </body>

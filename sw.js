@@ -1,5 +1,5 @@
-const CACHE_NAME = 'amt-eusebio-v12-bank-holidays-reports-restore-r1-offline-s5-1';
-const PREVIOUS_CACHE = 'amt-eusebio-v12-bank-holidays-reports-restore-r1-offline-s5';
+const CACHE_NAME = 'amt-eusebio-v12-bank-holidays-reports-restore-r1-offline-s5-2';
+const PREVIOUS_CACHE = 'amt-eusebio-v12-bank-holidays-reports-restore-r1-offline-s5-1';
 const PDF_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
 const TAILWIND_URL = 'https://cdn.tailwindcss.com/';
 const FA_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/';
@@ -24,7 +24,7 @@ self.addEventListener('install', event => {
     // Each path is relative to this service worker, including GitHub Pages project sites.
     await cache.addAll(APP_SHELL.map(path => new Request(new URL(path, self.registration.scope), {cache: 'reload'})));
     const html = await cache.match('./index.html');
-    if (!html || !(await html.text()).includes('Restauração corrigida R1 | Offline S5.1')) throw new Error('Versão HTML incompatível');
+    if (!html || !(await html.text()).includes('Restauração corrigida R1 | Offline S5.2')) throw new Error('Versão HTML incompatível');
     // Preserve the original CDN script, including its runtime configuration.
     const request = new Request(TAILWIND_URL, {mode: 'no-cors', cache: 'reload'});
     const response = await fetch(request);
@@ -112,7 +112,7 @@ self.addEventListener('fetch', event => {
       // Recover only the matching release, never mix a new HTML with an old worker.
       try {
         const response = await fetch(new Request(new URL('./index.html', self.registration.scope), {cache: 'reload'}));
-        if (!response.ok || !(await response.clone().text()).includes('Restauração corrigida R1 | Offline S5.1')) throw new Error('Versão incompatível');
+        if (!response.ok || !(await response.clone().text()).includes('Restauração corrigida R1 | Offline S5.2')) throw new Error('Versão incompatível');
         await cache.put('./index.html', response.clone());
         return response;
       } catch (_) {
@@ -153,7 +153,7 @@ async function inspectOffline(repair) {
         const fresh = await fetch(new Request(url, {mode, cache:'reload'}));
         if (!fresh.ok && fresh.type !== 'opaque') throw new Error('HTTP');
         if (url === new URL('./index.html', self.registration.scope).href || url === self.registration.scope) {
-          if (!(await fresh.clone().text()).includes('Restauração corrigida R1 | Offline S5.1')) throw new Error('Versão incompatível');
+          if (!(await fresh.clone().text()).includes('Restauração corrigida R1 | Offline S5.2')) throw new Error('Versão incompatível');
         }
         await cache.put(url, fresh.clone()); response = fresh;
       } catch (_) {}
@@ -168,7 +168,7 @@ async function inspectOffline(repair) {
     if (!fonts.length) missing.push('Fontes: lista indisponível');
     urls.push(...fonts); await Promise.all(fonts.map(check));
   }
-  return {version:'S5.1', total:urls.length, missing};
+  return {version:'S5.2', total:urls.length, missing};
 }
 self.addEventListener('message', event => {
   if (!event.data || event.data.type !== 'AMT_OFFLINE_CHECK' || !event.ports[0]) return;
