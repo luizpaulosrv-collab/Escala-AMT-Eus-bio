@@ -206,14 +206,14 @@
             if(!a.length){display.textContent='Escala: não configurada';window.refreshAgentHeader?.();return;}
             const scale=a[a.length-1].scale;display.textContent='Escala: '+(scale==='administrativo'?'Administrativo':scale+'h');window.refreshAgentHeader?.();
         }
-        function clearSpecificScaleMonth(){
+        async function clearSpecificScaleMonth(){
             const month=document.getElementById('clearScaleMonth').value;if(!month){alert('Selecione o mês cuja escala deseja limpar.');return;}
             let configs=[];try{configs=JSON.parse(amtStorage.getItem('amt_month_scales')||'[]')}catch(_){}
             const matches=configs.some(c=>month>=c.startMonth&&month<=c.endMonth);if(!matches){alert('Não há escala configurada para esse mês.');return;}
             const [yy,mm]=month.split('-').map(Number);const label=new Date(yy,mm-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
             if(!confirm('Deseja limpar a configuração da escala de '+label+'? Os outros meses serão preservados.'))return;
-            const kept=[];configs.forEach(c=>{if(month<c.startMonth||month>c.endMonth){kept.push(c);return;}const prev=new Date(yy,mm-2,1);const next=new Date(yy,mm,1);const prevKey=prev.getFullYear()+'-'+String(prev.getMonth()+1).padStart(2,'0');const nextKey=next.getFullYear()+'-'+String(next.getMonth()+1).padStart(2,'0');if(c.startMonth<month)kept.push({...c,endMonth:prevKey});if(c.endMonth>month)kept.push({...c,startMonth:nextKey});});
-            amtStorage.setItem('amt_month_scales',JSON.stringify(kept));document.getElementById('clearScaleMonth').value='';renderSavedScaleConfigs();renderApp();updateCountdown();alert('Configuração de '+label+' removida.');
+            if(!await amtPrevent())return;const kept=[];configs.forEach(c=>{if(month<c.startMonth||month>c.endMonth){kept.push(c);return;}const prev=new Date(yy,mm-2,1);const next=new Date(yy,mm,1);const prevKey=prev.getFullYear()+'-'+String(prev.getMonth()+1).padStart(2,'0');const nextKey=next.getFullYear()+'-'+String(next.getMonth()+1).padStart(2,'0');if(c.startMonth<month)kept.push({...c,endMonth:prevKey});if(c.endMonth>month)kept.push({...c,startMonth:nextKey});});
+            amtStorage.setItem('amt_month_scales',JSON.stringify(kept));document.getElementById('clearScaleMonth').value='';renderSavedScaleConfigs();renderApp();updateCountdown();await amtStorage.flush();window.opUI?.();alert('Configuração de '+label+' removida.');
         }
         async function clearAllScaleConfigs(){let configs=[];try{configs=JSON.parse(amtStorage.getItem('amt_month_scales')||'[]')}catch(_){};if(!configs.length){alert('Não há escalas configuradas para limpar.');return;}if(!confirm('Tem certeza de que deseja resetar TODAS as escalas configuradas? Essa ação não pode ser desfeita.'))return;if(!await amtPrevent())return;amtStorage.removeItem('amt_month_scales');document.getElementById('clearScaleMonth').value='';renderSavedScaleConfigs();renderApp();updateCountdown();alert('Todas as configurações de escala foram removidas.');}
 
@@ -650,12 +650,12 @@
             const statusText = document.getElementById('statusText');
             const countdownTitle = document.getElementById('countdownTitle');
             let prefs={};try{prefs=JSON.parse(amtStorage.getItem('amt_agent_profile_v35')||'{}')||{};}catch(_){}
-            const mode=['countdown','date','none'].includes(prefs.headerShiftMode)?prefs.headerShiftMode:'countdown';
+            const mode=['countdown','date','none','all'].includes(prefs.headerShiftMode)?prefs.headerShiftMode:'countdown';
             const showStatus=prefs.headerShowStatus!==false;
             document.getElementById('headerShiftPanel').hidden=!showStatus&&mode==='none';
             statusBadge.hidden=!showStatus;countdownTitle.hidden=mode==='none';
-            document.getElementById('headerCountdownDigits').hidden=mode!=='countdown';
-            const dateDisplay=document.getElementById('headerNextDate');dateDisplay.hidden=mode==='none';document.getElementById('headerShiftPanel').dataset.mode=mode;
+            document.getElementById('headerCountdownDigits').hidden=!['countdown','all'].includes(mode);
+            const dateDisplay=document.getElementById('headerNextDate');dateDisplay.hidden=!['date','all'].includes(mode);document.getElementById('headerShiftPanel').dataset.mode=mode;
             if(!showStatus&&mode==='none')return;
             const countdownFields = ['cdDays', 'cdHours', 'cdMins', 'cdSecs'];
             const shiftHours = 24;
@@ -704,7 +704,7 @@
                 countdownTitle.innerText = nextShift && nextShift.reason === 'extra' ? 'Plantão Extra em' : nextShift && nextShift.reason === 'swap' ? 'Troca de Plantão em' : 'Próximo Plantão';
             }
 
-            statusBadge.className='amt-operational-status';statusBadge.dataset.state=activeShift?'duty':'off';const panel=document.getElementById('headerShiftPanel');panel.dataset.state=statusBadge.dataset.state;let progress=0;if(activeShift)progress=(now-activeShift.startTime)/(activeShift.endTime-activeShift.startTime);else if(nextShift){for(let offset=0;offset>=-730;offset--){const d=new Date(today);d.setDate(d.getDate()+offset);if(!getWorkReason(d))continue;const end=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1,6);if(end<=now){progress=(now-end)/(nextShift.startTime-end);break;}}}document.getElementById('amtRingProgress').setAttribute('stroke-dasharray',`${Math.max(0,Math.min(1,progress||0))*169.646} 170`);
+            statusBadge.className='amt-operational-status';statusBadge.dataset.state=activeShift?'duty':'off';const panel=document.getElementById('headerShiftPanel');panel.dataset.state=statusBadge.dataset.state;let progress=0;if(activeShift)progress=(now-activeShift.startTime)/(activeShift.endTime-activeShift.startTime);else if(nextShift){for(let offset=0;offset>=-730;offset--){const d=new Date(today);d.setDate(d.getDate()+offset);if(!getWorkReason(d))continue;const end=new Date(d.getFullYear(),d.getMonth(),d.getDate()+1,6);if(end<=now){progress=(now-end)/(nextShift.startTime-end);break;}}}panel.style.setProperty('--amt-progress',Math.max(0,Math.min(1,progress||0))*100+'%');document.getElementById('amtRingProgress').setAttribute('stroke-dasharray',`${Math.max(0,Math.min(1,progress||0))*169.646} 170`);
             dateDisplay.textContent=targetTime?targetTime.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'2-digit'})+' • '+targetTime.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):'Nenhum plantão previsto';
             if(mode==='date')return;
             if (!targetTime) {
@@ -1087,7 +1087,7 @@
         function addReportCompareMonth(){const wrap=document.getElementById('reportCompareMonths');const n=wrap.querySelectorAll('.report-compare-month').length+1;const label=document.createElement('label');label.className='text-xs relative block';label.innerHTML='<span class="block pr-7">Mês '+n+'</span><button type="button" aria-label="Excluir mês da comparação" title="Excluir mês" onclick="removeReportCompareMonth(this)" class="absolute right-0 top-0 h-6 w-6 rounded-full bg-red-600 text-white font-black leading-none hover:bg-red-700">×</button><input type="month" class="report-compare-month mt-1 w-full px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm">';wrap.appendChild(label);const input=label.querySelector('input[type=month]');if(input){input.id='reportCompareMonth_'+n;input.classList.add('hidden');const b=document.createElement('button');b.type='button';b.id=input.id+'WheelDisplay';b.className='mt-1 w-full text-left px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-sm text-gray-500';b.textContent='Selecionar mês';b.onclick=()=>openMonthWheel(input);input.insertAdjacentElement('afterend',b);}} function removeReportCompareMonth(button){const wrap=document.getElementById('reportCompareMonths');const labels=[...wrap.querySelectorAll('label')];if(labels.length<=2){alert('A comparação precisa manter pelo menos dois meses.');return;}button.closest('label').remove();[...wrap.querySelectorAll('label')].forEach((label,i)=>{const span=label.querySelector('span');if(span)span.textContent='Mês '+(i+1);});}
         function resetReportFields(){const mode=document.getElementById('reportMode');if(mode)mode.value='';['reportMonth','reportMonthStartRange','reportMonthEnd'].forEach(id=>{const el=document.getElementById(id);if(el){el.value='';if(window.updateMonthInputDisplay)window.updateMonthInputDisplay(el);}});document.querySelectorAll('.report-compare-month').forEach(el=>{el.value='';if(window.updateMonthInputDisplay)window.updateMonthInputDisplay(el);});document.querySelectorAll('#reportOptions input[type=checkbox], #pdfOptions input[type=checkbox]').forEach(el=>{if(el.dataset.defaultChecked==='true')el.checked=true;});const wrap=document.getElementById('reportCompareMonths');if(wrap){const labels=[...wrap.querySelectorAll('label')];labels.slice(2).forEach(x=>x.remove());}updateReportMode();}
         function generateMonthlyPDF() {
-            const mode=document.getElementById('reportMode')?.value||'single';let monthKeys=[];
+            const mode=document.getElementById('reportMode')?.value;let monthKeys=[];if(!mode||![...document.querySelectorAll('[id^=pdfOpt]')].some(x=>x.checked)){alert('Selecione o tipo e o conteúdo do relatório.');return;}
             const validMonth=v=>/^\d{4}-\d{2}$/.test(v||'');
             if(mode==='single'){const v=document.getElementById('reportMonth').value;if(!validMonth(v)){alert('Selecione o mês que deseja consultar.');return;}monthKeys=[v];}
             else if(mode==='period'){const first=document.getElementById('reportMonthStartRange').value,last=document.getElementById('reportMonthEnd').value;if(!validMonth(first)||!validMonth(last)){alert('Selecione o mês inicial e final do período.');return;}if(last<first){alert('O mês final deve ser igual ou posterior ao inicial.');return;}let c=new Date(+first.slice(0,4),+first.slice(5,7)-1,1),e=new Date(+last.slice(0,4),+last.slice(5,7)-1,1);while(c<=e&&monthKeys.length<120){monthKeys.push(c.getFullYear()+'-'+String(c.getMonth()+1).padStart(2,'0'));c.setMonth(c.getMonth()+1);}}
@@ -1109,7 +1109,7 @@
             line(`Total de plantões extras: ${grandExtraShifts}`,true,9);
             line(`Total de horas extras 50%: ${grandH50}h`,true,9);
             line(`Total de horas extras 100%: ${grandH100}h`,true,9);
-            line('Relatório gerado pelo aplicativo Escala AMT Eusébio.',false,7);doc.save('Relatorio_AMT_Eusebio_'+monthKeys[0]+(monthKeys.length>1?'_comparacao_'+monthKeys[monthKeys.length-1]:'')+'.pdf');
+            line('Relatório gerado pelo aplicativo Escala AMT Eusébio.',false,7);doc.save('Relatorio_AMT_Eusebio_'+monthKeys[0]+(monthKeys.length>1?'_comparacao_'+monthKeys[monthKeys.length-1]:'')+'.pdf');document.querySelectorAll('[id^=pdfOpt]').forEach(x=>x.checked=false);document.querySelectorAll('[id^=pdfOpt]').forEach(x=>x.checked=false);
             resetReportFields();
         }
 
@@ -1139,7 +1139,7 @@
         function searchRecords() {
             const query=(document.getElementById('recordSearch')?.value||'').trim().toLocaleLowerCase('pt-BR');
             const root=document.getElementById('recordResults');if(!root)return;root.innerHTML='';
-            if(!query){root.innerHTML='<p class="text-gray-500">Digite um termo para pesquisar registros.</p>';return;}
+            if(!query)return;
             const matches=Object.entries(eventsData||{}).filter(([key,e])=>{
                 const parts=[key,e?.note||'',e?.swap?.agent||'',...(e?.attachments||[]).map(a=>a.name||a.filename||'')];
                 return parts.join(' ').toLocaleLowerCase('pt-BR').includes(query);

@@ -1,4 +1,4 @@
-ESCALA AMT EUSÉBIO — V13.4 (2026.11.27)
-Base: V13.3. Versão para teste. Faça backup completo antes de publicar. Extraia e substitua os arquivos na raiz do repositório existente, sem apagar dados do navegador.
-Inclui altura estável do status, ajustes manuais do cabeçalho com prévia e backup no perfil, retirada da admissão apenas do cabeçalho, indicador circular e seletor 2012 até ano atual + 10. Registros fora do intervalo não são excluídos.
-Validação estática: JavaScript, IDs HTML e ZIP. Teste visual e funcional em celular ainda necessário. Textos personalizados extremos podem exigir redução automática da fonte.
+V13.5.3 — revisão técnica, ainda não homologada.
+Alterações desta revisão: seleção persistente do cache de versão mediante mensagem explícita, preservação dos caches anteriores, cópia preventiva e atualização da lixeira ao limpar escala mensal, proteção contra datas inválidas e troca ausente.
+Validação: sintaxe JavaScript e teste isolado de exclusão de janeiro de 2027 em intervalo janeiro–março.
+Limitações: seleção de versão depende da disponibilidade dos caches e de migração inicial; não testada em navegador real. OAuth, feriados municipais, auditoria integral dos 25 requisitos e recuperação de todos os tipos ainda não homologados. Não publicar sobre produção sem backup e teste isolado.
