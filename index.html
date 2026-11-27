@@ -17,33 +17,11 @@
     <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 
 <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        amt: {
-                            yellow: '#FFC107',
-                            yellowDark: '#D99B00',
-                            black: '#121212',
-                            cardDark: '#1E1E24',
-                            accentBlue: '#2563EB',
-                            duty: '#1D4ED8',
-                            off: '#374151',
-                            extra50: '#F59E0B',
-                            extra100: '#EF4444'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    <link rel="stylesheet" href="./vendor/tailwind.css">
     <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>window.FontAwesomeConfig={autoReplaceSvg:"nest",observeMutations:true};</script><script defer src="./vendor/icons.js"></script>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
+    
     <style>
         html { width:100%; min-height:100%; overflow-x:hidden; -webkit-text-size-adjust:100%; }
         /* Corrige a área segura do iOS quando o app é aberto pela Tela de Início.
@@ -790,7 +768,7 @@ html[data-color-theme="blackMono"] .text-red-500 {
     </div>
 
     <!-- Biblioteca para gerar relatórios PDF localmente no navegador -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="./vendor/pdf-local.js"></script>
     <!-- JAVASCRIPT DE LÓGICA E INTERAÇÃO -->
     <script>
         /* ==========================================================================
