@@ -369,7 +369,7 @@
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
 
-            const firstDayIndex = new Date(year, month, 1).getDay();
+            const firstDayIndex = (new Date(year, month, 1).getDay()+6)%7;
             const totalDays = new Date(year, month + 1, 0).getDate();
 
             const prevMonthDays = new Date(year, month, 0).getDate();
@@ -486,7 +486,7 @@
 
             cell.innerHTML = `
                 <div class="flex items-center justify-between">
-                    <span class="text-xs sm:text-sm font-extrabold ${getHolidayForDate(dateObj)?'!text-red-600 dark:!text-red-400':''}" title="${getHolidayForDate(dateObj)?getHolidayForDate(dateObj).name:''}">${dateObj.getDate()}</span>
+                    <span class="text-xs sm:text-sm font-extrabold ${getHolidayForDate(dateObj)&&!getHolidayForDate(dateObj).optional?'holiday-number':''}" title="${getHolidayForDate(dateObj)?getHolidayForDate(dateObj).name:''}">${dateObj.getDate()}</span>
                     <div class="flex items-center gap-1">
                         ${badgesHtml}
                     </div>
@@ -518,7 +518,7 @@
                 const monthName = new Date(currentYear, monthIdx, 1).toLocaleDateString('pt-BR', { month: 'long' });
 
                 let daysGridHtml = '';
-                const firstDayIndex = new Date(currentYear, monthIdx, 1).getDay();
+                const firstDayIndex = (new Date(currentYear, monthIdx, 1).getDay()+6)%7;
                 const totalDays = new Date(currentYear, monthIdx + 1, 0).getDate();
 
                 for (let e = 0; e < firstDayIndex; e++) {
@@ -539,7 +539,7 @@
                     const holiday=getHolidayForDate(thisDate);
                     daysGridHtml += `
                         <div data-date="${currentYear}-${String(monthIdx + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}" class="year-day-cell h-6 w-full flex items-center justify-center text-[10px] rounded-md cursor-pointer select-none touch-manipulation hover:opacity-80 transition ${bg}" title="${holiday?holiday.name:''}">
-                            <span class="${holiday?'!text-red-600 dark:!text-red-400':''}">${day}</span>
+                            <span class="${holiday&&!holiday.optional?'holiday-number':''}">${day}</span>
                         </div>
                     `;
                 }
@@ -547,7 +547,7 @@
                 monthCard.innerHTML = `
                     <h4 class="font-bold text-xs uppercase tracking-wider text-amber-500 mb-2 capitalize text-center">${monthName}</h4>
                     <div class="grid grid-cols-7 gap-1 text-center text-[9px] text-gray-400 font-bold mb-1">
-                        <div>D</div><div>S</div><div>T</div><div>Q</div><div>Q</div><div>S</div><div>S</div>
+                        <div>S</div><div>T</div><div>Q</div><div>Q</div><div>S</div><div>S</div><div>D</div>
                     </div>
                     <div class="grid grid-cols-7 gap-1">
                         ${daysGridHtml}
@@ -1198,7 +1198,7 @@
             if (!secondConfirm) return;
             if(!await amtPrevent())return;
             try {
-                amtStorage.keys().filter(key => key.startsWith('amt_')).forEach(key => amtStorage.removeItem(key));
+                opPause=true; amtStorage.keys().filter(key => key.startsWith('amt_')).forEach(key => amtStorage.removeItem(key));
                 amtStorage.removeItem('amt_agent_profile_v35');
                 await amtStorage.flush(); await amtClearPDFs();
                 Object.keys(window.localStorage).filter(k=>k.startsWith('amt_')).forEach(k=>window.localStorage.removeItem(k));

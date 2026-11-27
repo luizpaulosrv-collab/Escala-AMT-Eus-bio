@@ -1,5 +1,5 @@
-const CACHE_NAME='amt-eusebio-2026.11.26-12.0';
-const APP_SHELL=['./','./index.html','./privacidade.html','./termos.html','./storage.js','./boot.js','./pin.js','./app-core.js','./app-features.js','./backup.js','./cloud.js','./updates.js','./settings-nav.js','./version.json','./fundo-amt.jpeg','./welcome-amt.jpg','./brasao-amt-oficial.jpeg','./manifest.webmanifest','./apple-touch-icon.png','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png','./icons/icon-180.png'];
+const CACHE_NAME='amt-eusebio-2026.11.26-13.0';
+const APP_SHELL=['./','./index.html','./privacidade.html','./termos.html','./storage.js','./boot.js','./pin.js','./app-core.js','./app-features.js','./backup.js','./cloud.js','./updates.js','./settings-nav.js','./operational.js','./version.json','./fundo-amt.jpeg','./welcome-amt.jpg','./brasao-amt-oficial.jpeg','./manifest.webmanifest','./apple-touch-icon.png','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png','./icons/icon-180.png'];
 self.addEventListener('install',e=>e.waitUntil((async()=>{const c=await caches.open(CACHE_NAME);await c.addAll(APP_SHELL.map(x=>new Request(x,{cache:'reload'})));})()));
 self.addEventListener('message',e=>{if(e.data?.type==='SKIP_WAITING')self.skipWaiting();});
 self.addEventListener('activate',e=>e.waitUntil((async()=>{for(const k of await caches.keys())if(k.startsWith('amt-eusebio-')&&k!==CACHE_NAME)await caches.delete(k);await self.clients.claim();})()));
