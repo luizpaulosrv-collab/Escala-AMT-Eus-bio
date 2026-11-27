@@ -1,9 +1,9 @@
-const CACHE_NAME = 'amt-eusebio-v12-bank-holidays-reports-restore-r1-offline-r5';
+const CACHE_NAME = 'amt-eusebio-v12-bank-holidays-reports-restore-r1-offline-r2';
 const APP_SHELL = [
   './',
   './index.html',
   './brasao-amt-oficial.jpeg',
-  './vendor/tailwind-r5.css',
+  './vendor/tailwind.css',
   './vendor/icons.js',
   './vendor/pdf-local.js',
   './fundo-amt.jpeg',
