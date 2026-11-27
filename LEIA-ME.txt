@@ -1,0 +1,2 @@
+Escala AMT Eusébio - Versão Atualizada com Preto Absoluto (OLED #000000).
+Descompacte os arquivos na raiz do repositório no GitHub Pages.
